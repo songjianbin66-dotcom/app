@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import './player.css';
+import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
 
 const sectionTabs = [
   { key: 'mindmap', label: '脑图' },
@@ -732,74 +733,40 @@ function Avatar({
 function ContentPreviewPage({ onClose, section, sectionKey }) {
   return (
     <section className="content-preview-page">
-      <header className="content-preview-header">
-        <button
-          aria-label="返回播放页"
-          className="preview-back-button"
-          onClick={onClose}
-          type="button"
-        >
-          <ChevronLeft size={22} />
-        </button>
-        <h2>{section.title}</h2>
-      </header>
+      {sectionKey === 'mindmap' ? (
+        <MindmapPreviewPage
+          headerTitle="脑图预览"
+          title={section.title}
+          mindmapData={section.content}
+          okStyle={okStampStyle}
+          onBack={onClose}
+        />
+      ) : null}
+      {sectionKey !== 'mindmap' ? (
+        <>
+          <header className="content-preview-header">
+            <button
+              aria-label="返回播放页"
+              className="preview-back-button"
+              onClick={onClose}
+              type="button"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <h2>{section.title}</h2>
+          </header>
 
-      <div className="content-preview-body">
-        {sectionKey === 'mindmap' ? (
-          <MindmapPreview
-            content={section.content}
-            okStyle={okStampStyle}
-          />
-        ) : null}
-        {sectionKey === 'original' ? (
-          <OriginalPreview content={section.content} />
-        ) : null}
-        {sectionKey === 'lecture' ? (
-          <LecturePreview content={section.content} videos={section.videos} />
-        ) : null}
-      </div>
-
+          <div className="content-preview-body">
+            {sectionKey === 'original' ? (
+              <OriginalPreview content={section.content} />
+            ) : null}
+            {sectionKey === 'lecture' ? (
+              <LecturePreview content={section.content} videos={section.videos} />
+            ) : null}
+          </div>
+        </>
+      ) : null}
     </section>
-  );
-}
-
-function MindmapPreview({ content, okStyle }) {
-  return (
-    <article className="mindmap-preview mindmap-preview-template">
-      <div className="mindmap-watermark" aria-hidden="true">
-        <span className={okStyle.className} style={okStyle.extra}>
-          OK
-        </span>
-      </div>
-
-      <div className="mindmap-preview-content">
-        <p>
-          做 <PreviewMark>{content.action}</PreviewMark> 事，关键在于{' '}
-          <PreviewMark>{content.keyPoint}</PreviewMark>。
-        </p>
-        <p>
-          要针对 <PreviewMark>{content.target}</PreviewMark>，鉴于{' '}
-          <PreviewMark>{content.situation}</PreviewMark> 的形势，发挥{' '}
-          <PreviewMark>{content.advantage}</PreviewMark> 的优势。
-        </p>
-        <p>
-          本着 <PreviewMark>{content.principle}</PreviewMark> 的原则，运用{' '}
-          <PreviewMark>{content.method}</PreviewMark> 的方法，通过如下步骤实施：
-        </p>
-        <ol className="mindmap-steps">
-          {content.steps.map((step, index) => (
-            <li key={step}>
-              <span>{index + 1}</span>
-              {step}
-            </li>
-          ))}
-        </ol>
-        <p>
-          预计经过 <PreviewMark>{content.time}</PreviewMark> 机遇期，最终实现{' '}
-          <PreviewMark>{content.goal}</PreviewMark> 的目标。
-        </p>
-      </div>
-    </article>
   );
 }
 
@@ -831,10 +798,6 @@ function LecturePreview({ content, videos }) {
       })}
     </div>
   );
-}
-
-function PreviewMark({ children }) {
-  return <span className="preview-mark">{children}</span>;
 }
 
 function ActionButton({

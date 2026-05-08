@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   ChevronLeft, 
   MoreVertical, 
   Plus, 
@@ -28,6 +28,8 @@ import {
   Maximize2,
   RefreshCcw
 } from 'lucide-react';
+import './player.css';
+import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
 
 const THEME_COLOR = '#7265E3';
 
@@ -98,10 +100,16 @@ const App = () => {
   const okStyles = [
     {
       name: '经典紫',
-      className: 'text-[#7265E3] font-black opacity-[0.04]',
-      extra: '',
-      previewClassName: 'text-[#7265E3] font-black opacity-80',
-      previewExtra: ''
+      className: 'bg-gradient-to-r from-[#A695FF] via-[#7265E3] to-[#5146E5] bg-clip-text text-transparent font-black opacity-[0.10] tracking-[-10px]',
+      extra: {
+        transform: 'rotate(-11deg) scale(1.04)',
+        filter: 'drop-shadow(0 0 18px rgba(114,101,227,0.16))',
+      },
+      previewClassName: 'bg-gradient-to-r from-[#A695FF] via-[#7265E3] to-[#5146E5] bg-clip-text text-transparent font-black',
+      previewExtra: {
+        transform: 'rotate(-8deg)',
+        filter: 'drop-shadow(0 0 8px rgba(114,101,227,0.18))',
+      }
     },
     {
       name: '印章红',
@@ -112,24 +120,43 @@ const App = () => {
     },
     {
       name: '描边风',
-      className: 'text-transparent font-black opacity-[0.08]',
-      extra: { WebkitTextStroke: '4px #7265E3' },
+      className: 'text-transparent font-black opacity-[0.12] tracking-[-8px]',
+      extra: {
+        WebkitTextStroke: '3px #7A74E8',
+        textShadow: '8px 10px 0 rgba(122,116,232,0.08)',
+        transform: 'rotate(-7deg)',
+      },
       previewClassName: 'text-transparent font-black',
-      previewExtra: { WebkitTextStroke: '1.5px #7265E3' }
+      previewExtra: {
+        WebkitTextStroke: '1.6px #7A74E8',
+        textShadow: '4px 5px 0 rgba(122,116,232,0.12)',
+        transform: 'rotate(-6deg)',
+      }
     },
     {
       name: '极简灰',
-      className: 'text-gray-400 font-light opacity-[0.1] tracking-[20px]',
-      extra: '',
-      previewClassName: 'text-gray-400 font-light tracking-[4px] opacity-90',
-      previewExtra: ''
+      className: 'text-[#B7BEC9] font-light italic opacity-[0.15] tracking-[18px]',
+      extra: {
+        transform: 'rotate(-13deg) scale(1.08)',
+        textShadow: '0 14px 28px rgba(148,163,184,0.14)',
+      },
+      previewClassName: 'text-[#A8B0BC] font-light italic tracking-[6px]',
+      previewExtra: {
+        transform: 'rotate(-10deg)',
+      }
     },
     {
       name: '霓虹紫',
-      className: 'text-[#7265E3] font-black opacity-[0.05] blur-[2px]',
-      extra: { textShadow: '0 0 20px #7265E3' },
-      previewClassName: 'text-[#7265E3] font-black opacity-85',
-      previewExtra: { textShadow: '0 0 10px #7265E3' }
+      className: 'text-[#7B68FF] font-black opacity-[0.11] tracking-[-6px]',
+      extra: {
+        transform: 'rotate(9deg) scale(1.02)',
+        textShadow: '0 0 20px rgba(123,104,255,0.42), 0 0 52px rgba(123,104,255,0.20)',
+      },
+      previewClassName: 'text-[#7B68FF] font-black',
+      previewExtra: {
+        transform: 'rotate(7deg)',
+        textShadow: '0 0 10px rgba(123,104,255,0.46), 0 0 22px rgba(123,104,255,0.24)',
+      }
     }
   ];
 
@@ -201,6 +228,10 @@ const App = () => {
     setToastMessage(message);
   };
 
+  const openMindmapPreview = () => {
+    setView('browse');
+  };
+
   const handleSubmit = () => {
     const missingTabs = [];
 
@@ -223,7 +254,7 @@ const App = () => {
       return;
     }
 
-    setView('browse');
+    openMindmapPreview();
   };
 
   const handleMindmapComplete = () => {
@@ -232,7 +263,7 @@ const App = () => {
       return;
     }
 
-    setView('browse');
+    openMindmapPreview();
   };
 
   const addStepAt = (idx) => {
@@ -459,7 +490,7 @@ const App = () => {
             <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,#8C7BFF_0%,#7265E3_55%,#5C50D6_100%)] text-white ]">
               <Plus size={20} strokeWidth={2.8} />
             </div>
-            <div className="text-[14px] font-bold text-[#4B3FD5]">
+            <div className="text-[14px]  text-[#4B3FD5]">
               添加视频
             </div>
             <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
@@ -634,8 +665,6 @@ const App = () => {
       return renderLectureEditPage();
     }
 
-    const isMindmapTab = activeTab === 'mindmap';
-
     return (
     <div className="flex flex-col h-full bg-white relative">
       {/* 顶部导航 */}
@@ -698,7 +727,7 @@ const App = () => {
 
       {/* 主内容区 */}
       <div className="flex-1 overflow-y-auto no-scrollbar p-4">
-        {isMindmapTab && (
+        {activeTab === 'mindmap' && (
           <div className="flex min-h-full flex-col gap-4">
             <div className="bg-white rounded-xl p-6 border border-gray-100 leading-8 text-[14px] text-gray-800">
               做 <input className="inline-input" value={mindmapData.action} onChange={(e) => setMindmapData({...mindmapData, action: e.target.value})} /> 事，关键在于 <input className="inline-input" value={mindmapData.keyPoint} onChange={(e) => setMindmapData({...mindmapData, keyPoint: e.target.value})} />。<br />
@@ -927,96 +956,34 @@ const App = () => {
 
       <style>{`
         .inline-input { 
-          border: none; border-bottom: 1.5px solid #E5E7EB; margin: 0 4px; outline: none; 
+          border: none; border-bottom: 1px solid #A1A1AA; margin: 0 4px; outline: none; 
           width: 65px; text-align: center; color: ${THEME_COLOR}; font-weight: normal; font-size: 12px;
           background: transparent; transition: border-color 0.2s;
         }
         .inline-input:focus { border-bottom-color: ${THEME_COLOR}; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .root-mindmap-complete .preview-mark { text-decoration: none; }
       `}</style>
     </div>
     );
   };
 
   const renderBrowsePage = () => {
-    const currentOkStyle = okStyles[okStyleIndex];
     return (
-      <div className="flex flex-col h-full bg-white overflow-hidden relative">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0 bg-white z-20">
-          <div className="flex items-center space-x-2">
-            <ChevronLeft className="text-gray-600 cursor-pointer" onClick={() => setView('create')} />
-            <span className="font-bold text-lg">脑图预览</span>
-          </div>
-          {/* <div className="flex space-x-4 text-gray-500">
-            <Share2 size={20} />
-            <MoreHorizontal size={20} />
-          </div> */}
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-6 py-8 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-            <span className={`text-[240px] leading-none transition-all duration-500 select-none ${currentOkStyle.className}`} style={currentOkStyle.extra || {}}>OK</span>
-          </div>
-
-          <div className="relative z-10">
-            <h1 className="text-2xl font-bold mb-8 text-gray-900 leading-tight">{title}</h1>
-            <section className="mb-12 text-gray-800 leading-[2.6] text-[17.5px]">
-              <p>做 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.action}</span> 事，关键在于 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.keyPoint}</span>。</p>
-              <p className="mt-4">要针对 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.target}</span>，鉴于 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.situation}</span> 的形势，发挥 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.advantage}</span> 的优势。</p>
-              <p className="mt-4">本着 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.principle}</span> 的原则，运用 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.method}</span> 的方法，通过如下步骤实施：</p>
-              <div className="my-8 space-y-4 text-[16px] leading-relaxed pl-2 border-l-2 border-[#F3F0FF]">
-                {mindmapData.steps.map((s, i) => (
-                  <div key={i} className="flex items-start space-x-3">
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-[#F3F0FF] text-[#7265E3] flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                    <span className="text-gray-700 pt-0.5">{s}</span>
-                  </div>
-                ))}
-              </div>
-              <p>预计经过 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.time}</span> 机遇期，最终实现 <span className="font-bold text-[#7265E3] underline decoration-[#7265E3]/20 underline-offset-4">{mindmapData.goal}</span> 的目标。</p>
-            </section>
-          </div>
-        </div>
-
-        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 z-20 shrink-0">
-          <div className="flex items-center text-gray-400">
-            {/* <Palette size={14} className="mr-1" /> */}
-            <span className="text-xs font-bold">脑图模版</span>
-          </div>
-          <div className="mt-3 grid grid-cols-5 gap-1.5">
-            {okStyles.map((style, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setOkStyleIndex(idx)}
-                className={`rounded-[10px] border p-1 text-center transition-all ${
-                  okStyleIndex === idx
-                    ? 'bg-[#F3F0FF] border-[#7265E3] shadow-[0_6px_16px_rgba(114,101,227,0.15)]'
-                    : 'bg-white border-gray-200'
-                }`}
-              >
-                <div className="h-11 rounded-lg bg-gradient-to-br from-white to-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden">
-                  <span
-                    className={`text-sm leading-none select-none ${style.previewClassName}`}
-                    style={style.previewExtra || {}}
-                  >
-                    OK
-                  </span>
-                </div>
-                <div className={`mt-1.5 text-[10px] font-bold leading-tight ${okStyleIndex === idx ? 'text-[#7265E3]' : 'text-gray-500'}`}>
-                  {style.name}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-4 bg-white border-t border-gray-100 shrink-0 z-20">
-          <div className="w-full py-3 bg-[#7265E3] text-white rounded-xl font-bold flex items-center justify-center text-[13px]">
-            <span>完成并保存</span>
-          </div>
-        </div>
-      </div>
+      <MindmapPreviewPage
+        headerTitle="脑图预览"
+        title={title}
+        mindmapData={mindmapData}
+        okStyle={okStyles[okStyleIndex]}
+        onBack={() => setView('create')}
+        showTemplatePicker
+        templateOptions={okStyles}
+        selectedTemplateIndex={okStyleIndex}
+        onSelectTemplate={setOkStyleIndex}
+        showPrimaryAction
+        primaryActionLabel="保存草稿"
+      />
     );
   };
 

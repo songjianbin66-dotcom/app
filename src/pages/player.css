@@ -741,22 +741,22 @@
 
 .mindmap-preview p,
 .original-preview p {
-  margin: 0 0 16px;
+  margin: 0 0 1px;
 }
 
-.preview-mark {
+.mindmap-preview .preview-mark {
   color: var(--accent-blue);
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: underline;
   text-decoration-color: rgba(51, 112, 255, 0.18);
+  text-decoration-thickness: 1px;
   text-underline-offset: 4px;
 }
 
 .mindmap-steps {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 2px 0 18px;
+  margin: 2px 0 0px;
   padding: 0;
   list-style: none;
 }
