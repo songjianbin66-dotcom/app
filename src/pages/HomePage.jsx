@@ -44,6 +44,24 @@ const VIDEO_COVER_SETS = [
     'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=900&q=80',
   ],
 ];
+const PLAYER_ROOT_IDS = ['root-001', 'root-002', 'root-003'];
+const PLAYER_SECTION_KEY_BY_CATEGORY = {
+  脑图: 'mindmap',
+  原文: 'original',
+  讲解: 'lecture',
+};
+
+const getPlayerVideoId = (rootId, sectionKey) => {
+  if (sectionKey === 'lecture') {
+    return `${rootId}-lecture-1`;
+  }
+
+  if (sectionKey === 'original') {
+    return `${rootId}-original-1`;
+  }
+
+  return `${rootId}-mindmap-1`;
+};
 
 const parseCountLabel = (value) => {
   if (typeof value === 'number') {
@@ -92,15 +110,29 @@ const App = () => {
     pointerOffsetX: 0,
     pointerOffsetY: 0,
   });
+  const openPlayer = ({ action = 'play', rootId, sectionKey, videoId } = {}) => {
+    navigate('/player', {
+      state: rootId && sectionKey
+        ? {
+            action,
+            rootId,
+            sectionKey,
+            videoId,
+          }
+        : undefined,
+    });
+  };
 
   // 1. 根数据 - 10 条
   const cardData = Array.from({ length: 10 }).map((_, i) => {
     const baseTitle = i % 2 === 0
       ? `数智化赋能：如何构建企业级 AI 智能体应用架构 (${i + 1})`
       : `从 0 到 1 搭建产业数智链：史宪文教授的实战经验分享 (${i + 1})`;
+    const playerRootId = PLAYER_ROOT_IDS[i % PLAYER_ROOT_IDS.length];
 
     return {
       id: i + 1,
+      playerRootId,
       tags: i % 2 === 0 ? ['企业策划', '转型升级'] : ['数智链', '实战案例'],
       author: '史宪文',
       authorRole: i % 2 === 0 ? '创始链主' : '指导师',
@@ -111,6 +143,8 @@ const App = () => {
         {
           id: `v${i}-mind`,
           category: '脑图',
+          playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.脑图,
+          playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.脑图),
           title: `${baseTitle} · 脑图拆解`,
           agent: '企业策划智能体',
           duration: '01:20',
@@ -123,6 +157,8 @@ const App = () => {
         {
           id: `v${i}-source`,
           category: '原文',
+          playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.原文,
+          playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.原文),
           title: `${baseTitle} · 原文精读`,
           agent: '原文解读智能体',
           duration: '05:15',
@@ -135,6 +171,8 @@ const App = () => {
         {
           id: `v${i}-explain`,
           category: '讲解',
+          playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.讲解,
+          playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.讲解),
           title: `${baseTitle} · 案例讲解`,
           agent: '案例讲解智能体',
           duration: '03:45',
@@ -264,7 +302,7 @@ const App = () => {
         onClose={() => setIsSearchOpen(false)}
         rootDataResults={cardData}
         userResults={leaderData}
-        onOpenPlayer={() => navigate('/player')}
+        onOpenPlayer={openPlayer}
       />
     );
   }
@@ -364,7 +402,7 @@ const App = () => {
                     <DataCard
                       key={item.id}
                       data={item}
-                      onOpenPlayer={() => navigate('/player')}
+                      onOpenPlayer={openPlayer}
                     />
                   ))}
                   {visibleRootDataCount < cardData.length && (
@@ -716,6 +754,14 @@ const DataCard = ({ data, onOpenPlayer }) => {
     liked: false,
     favorited: false,
   };
+  const openCurrentVideo = (action = 'play') => {
+    onOpenPlayer?.({
+      action,
+      rootId: data.playerRootId,
+      sectionKey: currentVideo.playerSectionKey,
+      videoId: currentVideo.playerVideoId,
+    });
+  };
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -770,7 +816,16 @@ const DataCard = ({ data, onOpenPlayer }) => {
             key={v.id}
             video={v}
             isActive={activeIndex === idx}
-            onOpenPlayer={onOpenPlayer}
+            onOpenPlayer={() => {
+              const selectedVideo = data.videos[idx] ?? currentVideo;
+
+              onOpenPlayer?.({
+                action: 'play',
+                rootId: data.playerRootId,
+                sectionKey: selectedVideo.playerSectionKey,
+                videoId: selectedVideo.playerVideoId,
+              });
+            }}
           />
         ))}
       </div>
@@ -815,8 +870,24 @@ const DataCard = ({ data, onOpenPlayer }) => {
                 {formatCountLabel(currentVideoMetric.favorites)}
               </span>
             </button>
-            <div className="flex items-center gap-1"><MessageSquare size={14} /><span className="text-[12px]">{currentVideo.comments}</span></div>
-            <div className="flex items-center gap-1"><Share2 size={14} /><span className="text-[12px]">{currentVideo.shares}</span></div>
+            <button
+              type="button"
+              aria-label="评论"
+              onClick={() => openCurrentVideo('comment')}
+              className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
+            >
+              <MessageSquare size={14} />
+              <span className="text-[12px]">{currentVideo.comments}</span>
+            </button>
+            <button
+              type="button"
+              aria-label="分享"
+              onClick={() => openCurrentVideo('share')}
+              className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
+            >
+              <Share2 size={14} />
+              <span className="text-[12px]">{currentVideo.shares}</span>
+            </button>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
@@ -221,13 +221,51 @@ const makeSectionStateKey = (rootId, sectionKey) => `${rootId}-${sectionKey}`;
 const makeVideoRefKey = (rootId, sectionKey, videoId) =>
   `${rootId}-${sectionKey}-${videoId}`;
 
+function resolveRouteStateTarget(routeState) {
+  if (!routeState || typeof routeState !== 'object') {
+    return null;
+  }
+
+  const { rootId, sectionKey, videoId } = routeState;
+
+  if (typeof rootId !== 'string' || typeof sectionKey !== 'string') {
+    return null;
+  }
+
+  const rootIndex = rootDataFeed.findIndex((root) => root.id === rootId);
+
+  if (rootIndex < 0) {
+    return null;
+  }
+
+  const root = rootDataFeed[rootIndex];
+  const section = root.sections[sectionKey];
+
+  if (!section) {
+    return null;
+  }
+
+  const videoIndex = typeof videoId === 'string'
+    ? section.videos.findIndex((video) => video.id === videoId)
+    : -1;
+
+  return {
+    rootId: root.id,
+    rootIndex,
+    sectionKey,
+    videoIndex: videoIndex >= 0 ? videoIndex : 0,
+  };
+}
+
 function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const scrollerRef = useRef(null);
   const rootScrollTimeoutRef = useRef(null);
   const sectionScrollTimeoutRefs = useRef({});
   const sectionScrollerRefs = useRef({});
   const videoRefs = useRef({});
+  const consumedLocationKeyRef = useRef(null);
   const [activeRootIndex, setActiveRootIndex] = useState(0);
   const [activeSectionKeyByRootId, setActiveSectionKeyByRootId] = useState({});
   const [activeVideoIndexBySectionId, setActiveVideoIndexBySectionId] = useState({});
@@ -273,6 +311,36 @@ function App() {
   );
 
   useEffect(() => {
+    if (consumedLocationKeyRef.current === location.key) {
+      return;
+    }
+
+    consumedLocationKeyRef.current = location.key;
+    const routeTarget = resolveRouteStateTarget(location.state);
+
+    if (!routeTarget) {
+      return;
+    }
+
+    const sectionStateKey = makeSectionStateKey(routeTarget.rootId, routeTarget.sectionKey);
+
+    setActiveRootIndex(routeTarget.rootIndex);
+    setActiveSectionKeyByRootId((prev) => ({
+      ...prev,
+      [routeTarget.rootId]: routeTarget.sectionKey,
+    }));
+    setActiveVideoIndexBySectionId((prev) => ({
+      ...prev,
+      [sectionStateKey]: routeTarget.videoIndex,
+    }));
+    setPausedStates((prev) => ({
+      ...prev,
+      [sectionStateKey]: false,
+    }));
+    setActiveSheet(null);
+  }, [location.key, location.state]);
+
+  useEffect(() => {
     Object.entries(videoRefs.current).forEach(([key, video]) => {
       if (!video) {
         return;
@@ -294,6 +362,19 @@ function App() {
       }
     });
   }, [currentSectionStateKey, currentVisibleVideoKey, pausedStates, preview]);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+
+    if (!scroller) {
+      return;
+    }
+
+    scroller.scrollTo({
+      top: activeRootIndex * scroller.clientHeight,
+      behavior: 'smooth',
+    });
+  }, [activeRootIndex]);
 
   useEffect(() => {
     visibleSectionKeys.forEach(({ rootId, sectionKey }) => {
