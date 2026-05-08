@@ -27,6 +27,8 @@ const SHARED_THEME_STYLES = `
   .theme-bg { background-color: ${THEME_COLOR}; }
   .theme-border { border-color: ${THEME_COLOR}; }
 `;
+const USER_BADGE_CLASS = 'bg-[#FCEBEC] theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider';
+const TOP_LEFT_CATEGORY_BADGE_CLASS = 'absolute left-0 top-0 z-10 rounded-br-lg bg-[#000000]/50 px-3 py-1 text-[10px] font-bold text-white shadow-lg';
 const VIDEO_COVER_SETS = [
   [
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
@@ -711,7 +713,7 @@ const SearchRootDataCard = ({ data, onOpenPlayer }) => {
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/55" />
-          <div className="absolute left-2 top-2 rounded-full bg-white/88 px-2 py-0.5 text-[10px] font-bold theme-text">
+          <div className={TOP_LEFT_CATEGORY_BADGE_CLASS}>
             {primaryVideo.category}
           </div>
           <div className="absolute bottom-2 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">
@@ -968,7 +970,7 @@ const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
       loading="lazy"
     />
     <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-black/55" />
-    <div className="absolute left-0 top-0 z-10 rounded-br-lg bg-[#000000]/50 px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+    <div className={TOP_LEFT_CATEGORY_BADGE_CLASS}>
       {video.category}
     </div>
     <div className="absolute right-0 top-0 z-10 rounded-bl-lg theme-bg px-3 py-1 text-[10px] font-bold text-white shadow-lg">
@@ -983,12 +985,12 @@ const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   </button>
 );
 
-const UserTagList = ({ tags = [] }) => (
-  <div className="mt-1.5 flex flex-wrap gap-1.5">
+const UserTagList = ({ tags = [], className = '' }) => (
+  <div className={`flex flex-wrap gap-1.5 ${className}`.trim()}>
     {tags.map((tag) => (
       <span
         key={tag}
-        className="inline-flex items-center rounded-full bg-[#FCEBEC] px-2 py-0.5 text-[10px] font-semibold leading-none theme-text"
+        className={USER_BADGE_CLASS}
       >
         {tag}
       </span>
@@ -1002,13 +1004,13 @@ const LeaderItem = ({ leader }) => (
       <img src={leader.avatar} className="w-full h-full object-cover" alt={leader.name} />
     </div>
     <div className="ml-4 flex-1">
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1.5">
         <span className="text-[15px] font-bold text-[#1F2329]">{leader.name}</span>
         <div className={`inline-flex h-6 items-center justify-center rounded-full border px-2 text-[12px] leading-none ${leader.isFollowing ? 'bg-[#F5F6F8] text-[#8F959E] border-transparent' : 'bg-white theme-text theme-border'}`}>
           {leader.isFollowing ? '已关注' : '+ 关注'}
         </div>
       </div>
-      <UserTagList tags={leader.tags} />
+      <UserTagList tags={leader.tags} className="mb-1.5" />
       <div className="flex items-center gap-3">
         <StatMini label="根数据" val={leader.rootDataCount} />
         <div className="w-[1px] h-2.5 bg-[#E5E6EB]" />
@@ -1030,9 +1032,9 @@ const InstructorItem = ({ instructor }) => (
         <div className="ml-3">
           <div className="flex items-center gap-1.5">
             <span className="text-[15px] font-bold text-[#1F2329]">{instructor.name}</span>
-            <span className="bg-[#FCEBEC] theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider">审核通过率 {instructor.passRate}</span>
+            <span className={USER_BADGE_CLASS}>审核通过率 {instructor.passRate}</span>
           </div>
-          <UserTagList tags={instructor.tags} />
+          <UserTagList tags={instructor.tags} className="mt-1.5" />
         </div>
       </div>
       <div className={`inline-flex h-6 items-center justify-center rounded-full border px-2 text-[12px] font-medium leading-none ${instructor.isFollowing ? 'bg-[#F5F6F8] text-[#8F959E] border-transparent' : 'bg-white theme-text theme-border'}`}>
