@@ -85,12 +85,12 @@ const initialLectureEpisodes = [
   }),
 ];
 
-const TabTitleInput = ({ value, onChange }) => (
+const TabTitleInput = ({ value, onChange, placeholder = '请输入标题' }) => (
   <div className="rounded-[10px] border border-[#ECEEF3] bg-white px-3 py-2">
     <div className="flex items-center gap-4">
       <input
         type="text"
-        placeholder="请输入标题"
+        placeholder={placeholder}
         className="min-w-0 flex-1 border-none bg-transparent text-[13px]  text-[#1F2329] outline-none placeholder:text-[13px] placeholder:font-medium placeholder:text-[#C9CDD7]"
         value={value}
         onChange={onChange}
@@ -230,7 +230,6 @@ const App = () => {
     tabTitles.text.trim() !== '' &&
     getPlainText(originContent.html) !== '';
   const isLectureComplete =
-    tabTitles.video.trim() !== '' &&
     lectureEpisodes.length > 0 &&
     lectureEpisodes.every(
       (episode) =>
@@ -329,6 +328,19 @@ const App = () => {
     }
 
     openMindmapPreview();
+  };
+
+  const handleOriginSaveDraft = () => {
+    const hasTitle = tabTitles.text.trim() !== '';
+    const hasContent = getPlainText(originContent.html) !== '';
+    const hasVideo = originContent.videos.length > 0;
+
+    if (!hasTitle && !hasContent && !hasVideo) {
+      showToast('请先填写原文标题或内容');
+      return;
+    }
+
+    showToast('原文草稿已保存');
   };
 
   const addStepAt = (idx) => {
@@ -583,17 +595,7 @@ const App = () => {
         <div className="text-[19px] font-bold text-[#111827]">
           编辑第{activeLectureEpisodeIndex + 1}集
         </div>
-        <div className="flex items-center gap-1">
-          <div
-            onClick={saveLectureEpisode}
-            className="flex h-10 items-center px-2 text-[16px] font-bold text-[#C8161D]"
-            onKeyDown={(event) => handleDivActionKeyDown(event, saveLectureEpisode)}
-            role="button"
-            tabIndex={0}
-          >
-            保存
-          </div>
-        </div>
+        <div className="h-10 w-10 shrink-0" />
       </div>
 
       <div className="flex-1 overflow-y-auto no-scrollbar px-5 py-5">
@@ -721,6 +723,16 @@ const App = () => {
             </div>
           </div>
         </div>
+
+        <div className="pt-6">
+          <button
+            type="button"
+            onClick={saveLectureEpisode}
+            className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white"
+          >
+            保存草稿
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -754,9 +766,13 @@ const App = () => {
       </div>
 
       <div className="border-b border-[#EEF0F4] bg-white px-4 py-3 shrink-0">
-        <div className="flex items-center gap-1.5">
-          <div className="text-[13px] font-bold text-[#1F2329]">根数据标签</div>
-          <AlertCircle size={14} className="text-[#A0A7B4]" />
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <div className="text-[13px] font-bold text-[#1F2329]">根数据标签:</div>
+                    {/* <AlertCircle size={14} className="text-[#A0A7B4]" /> */}
+
+          <div className="text-[11px] font-medium leading-4 text-[#A0A7B4]">
+            用于分类和检索，最多添加 5 个
+          </div>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -788,10 +804,6 @@ const App = () => {
               />
             </div>
           )}
-        </div>
-
-        <div className="mt-3 text-[11px] font-medium leading-4 text-[#A0A7B4]">
-          标签属于整个根数据，用于分类和检索，最多添加 5 个
         </div>
       </div>
 
@@ -829,6 +841,7 @@ const App = () => {
             <TabTitleInput
               value={tabTitles.mindmap}
               onChange={(e) => updateTabTitle('mindmap', e.target.value)}
+              placeholder="请输入脑图标题"
             />
             <div className="bg-white rounded-xl p-6 border border-gray-100 leading-8 text-[14px] text-gray-800">
               做 <input className="inline-input" value={mindmapData.action} onChange={(e) => setMindmapData({...mindmapData, action: e.target.value})} /> 事，关键在于 <input className="inline-input" value={mindmapData.keyPoint} onChange={(e) => setMindmapData({...mindmapData, keyPoint: e.target.value})} />。<br />
@@ -876,7 +889,7 @@ const App = () => {
               <button
                 type="button"
                 onClick={handleMindmapComplete}
-                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white shadow-[0_18px_32px_rgba(200,22,29,0.28)]"
+                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white"
               >
                 保存草稿
               </button>
@@ -889,6 +902,7 @@ const App = () => {
             <TabTitleInput
               value={tabTitles.text}
               onChange={(e) => updateTabTitle('text', e.target.value)}
+              placeholder="请输入原文标题"
             />
             <div className="bg-white rounded-xl flex flex-col border border-gray-100 overflow-hidden min-h-[400px] relative">
               <div className="p-2 bg-gray-50 border-b border-gray-100 flex items-center space-x-3 overflow-x-auto no-scrollbar shrink-0">
@@ -919,15 +933,20 @@ const App = () => {
                 }))
               }
             />
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleOriginSaveDraft}
+                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white"
+              >
+                保存草稿
+              </button>
+            </div>
           </div>
         )}
 
         {activeTab === 'video' && (
           <div className="space-y-4">
-            <TabTitleInput
-              value={tabTitles.video}
-              onChange={(e) => updateTabTitle('video', e.target.value)}
-            />
             <div className="rounded-xl border border-[#EEF0F4] bg-white shadow-[0_10px_28px_rgba(17,24,39,0.04)]">
               <div className="flex items-center justify-between border-b border-[#EEF0F4] px-4 py-4">
                 <div>
@@ -1126,10 +1145,9 @@ const App = () => {
   );
 
   return (
-    <div className="flex justify-center bg-white w-full min-h-screen">
-      <div className="w-full max-w-[400px] h-[812px] bg-white relative overflow-hidden font-sans border-[8px] border-black rounded-[3rem] my-4">
+    <div className="flex min-h-screen w-full justify-center bg-gray-100 font-sans">
+      <div className="relative flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-white text-[#1F2329] shadow-2xl">
         {view === 'create' ? renderCreatePage() : view === 'library' ? renderLibraryPage() : renderBrowsePage()}
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-black rounded-full opacity-20" />
         {toastMessage && (
           <div className="pointer-events-none absolute left-1/2 top-6 z-50 w-[calc(100%-32px)] -translate-x-1/2">
             <div className="rounded-2xl bg-[rgba(17,24,39,0.88)] px-4 py-3 text-center text-[13px] font-medium leading-5 text-white shadow-[0_12px_32px_rgba(17,24,39,0.22)] backdrop-blur-sm">

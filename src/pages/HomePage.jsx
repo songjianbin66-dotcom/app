@@ -319,33 +319,33 @@ const App = () => {
                   >
                     <X size={16} strokeWidth={2.1} />
                   </button>
-                  <div className="mb-2">
-                    <div className="mb-1.5 text-[13px] font-bold tracking-[0.01em]">链主尊享</div>
-                    <div className="mb-1.5 flex items-end gap-1">
-                      <span className="translate-y-[-1px] text-[14px] font-medium text-white/70">￥</span>
-                      <span className="text-[26px] font-black leading-none tracking-[-0.03em]">10000</span>
-                    </div>
-                    <div className="space-y-1.5 text-[10px] font-semibold text-white/72">
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/35" />
-                        <span>根数据开发权</span>
+                  <div className="pr-[150px]">
+                    <div className="min-w-0">
+                      <div className="mb-1.5 text-[13px] font-bold tracking-[0.01em]">链主尊享</div>
+                      <div className="mb-1.5 flex items-end gap-1">
+                        <span className="translate-y-[-1px] text-[14px] font-medium text-white/70">￥</span>
+                        <span className="text-[26px] font-black leading-none tracking-[-0.03em]">10000</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/35" />
-                        <span>1800链主额度销售权</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white/35" />
-                        <span>根数据辅导权</span>
+                      <div className="space-y-1.5 text-[10px] font-semibold text-white/72">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white/35" />
+                          <span>根数据开发权</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white/35" />
+                          <span>1800链主额度销售权</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white/35" />
+                          <span>根数据辅导权</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex justify-end">
-                    <div
-                      className="inline-flex h-8 items-center justify-center rounded-[16px] bg-white px-4 text-[11px] font-bold theme-text shadow-[0_8px_18px_rgba(255,255,255,0.16)]"
-                    >
-                      立即成为链主
-                    </div>
+                  <div
+                    className="absolute bottom-2.5 right-4 inline-flex h-8 items-center justify-center rounded-[16px] bg-white px-4 text-[11px] font-bold theme-text shadow-[0_8px_18px_rgba(255,255,255,0.16)]"
+                  >
+                    立即成为链主
                   </div>
                 </div>
               </section>
@@ -632,7 +632,7 @@ const SearchRootDataCard = ({ data, onOpenPlayer }) => {
                 {tag}
               </span>
             ))}
-            <span className="rounded-full bg-[#FFF4E5] px-2 py-0.5 text-[10px] font-semibold text-[#E79A23]">
+            <span className="rounded-full theme-bg px-2 py-0.5 text-[10px] font-semibold text-white">
               {primaryVideo.agent}
             </span>
           </div>
@@ -776,11 +776,11 @@ const DataCard = ({ data, onOpenPlayer }) => {
       </div>
       
       <div className="px-4 pt-3">
-        <h3 className="text-[15px] font-bold leading-[1.4] line-clamp-2 mb-3 text-[#1F2329]">{currentVideo.title}</h3>
-        <div className="mb-4 text-[11px] font-medium tracking-[0.01em] text-gray-400">
+        <h3 className="text-[15px] font-bold leading-[1.4] line-clamp-2 mb-2 text-[#1F2329]">{currentVideo.title}</h3>
+        <div className="mb-2 text-[11px] font-medium tracking-[0.01em] text-gray-400">
           {data.tags.join(' · ')}
         </div>
-        <div className="flex items-center justify-between pt-3 border-t border-[#F5F6F8]">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full  overflow-hidden bg-[#F5F6F8]">
               <img src={data.authorAvatar} alt={data.author} className="h-full w-full object-cover" />
@@ -841,7 +841,7 @@ const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
     <div className="absolute left-0 top-0 z-10 rounded-br-lg bg-[#000000]/50 px-3 py-1 text-[10px] font-bold text-white shadow-lg">
       {video.category}
     </div>
-    <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#FFA800] px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+    <div className="absolute right-0 top-0 z-10 rounded-bl-lg theme-bg px-3 py-1 text-[10px] font-bold text-white shadow-lg">
       {video.agent}
     </div>
     <div className="absolute inset-0 flex items-center justify-center">
