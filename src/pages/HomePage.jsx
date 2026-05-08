@@ -14,14 +14,19 @@ import {
   User,
   Zap,
   ArrowLeft,
-  X,
-  Clock,
-  Trash2
+  X
 } from 'lucide-react';
 
 const THEME_COLOR = '#7265E3';
 const INITIAL_ROOT_DATA_COUNT = 4;
 const ROOT_DATA_LOAD_STEP = 4;
+const SHARED_THEME_STYLES = `
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .theme-text { color: ${THEME_COLOR}; }
+  .theme-bg { background-color: ${THEME_COLOR}; }
+  .theme-border { border-color: ${THEME_COLOR}; }
+`;
 const VIDEO_COVER_SETS = [
   [
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
@@ -254,7 +259,14 @@ const App = () => {
   }, []);
 
   if (isSearchOpen) {
-    return <SearchPage onClose={() => setIsSearchOpen(false)} />;
+    return (
+      <SearchPage
+        onClose={() => setIsSearchOpen(false)}
+        rootDataResults={cardData}
+        userResults={leaderData}
+        onOpenPlayer={() => navigate('/player')}
+      />
+    );
   }
 
   const isHomeTab = bottomTab === '首页';
@@ -262,13 +274,7 @@ const App = () => {
 
   return (
     <div className="flex justify-center bg-gray-100 min-h-screen font-sans">
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .theme-text { color: ${THEME_COLOR}; }
-        .theme-bg { background-color: ${THEME_COLOR}; }
-        .theme-border { border-color: ${THEME_COLOR}; }
-      `}</style>
+      <style>{SHARED_THEME_STYLES}</style>
 
       <div ref={phoneFrameRef} className="w-full max-w-[430px] h-screen bg-white flex flex-col shadow-2xl relative overflow-hidden text-[#1F2329]">
         
@@ -466,52 +472,121 @@ const App = () => {
 };
 
 // --- 全屏搜索页面 ---
-const SearchPage = ({ onClose }) => {
+const SearchPage = ({ onClose, rootDataResults = [], userResults = [], onOpenPlayer }) => {
   const [searchValue, setSearchValue] = useState('');
-  const [history, setHistory] = useState(['史宪文教授', '产业数智链', 'AI 战略', '数字资产']);
+  const [activeSearchTab, setActiveSearchTab] = useState('根数据');
+  const handleSearchAction = () => {
+    setSearchValue((current) => current.trim());
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+  const normalizedKeyword = searchValue.trim().toLowerCase();
+  const filteredRootDataResults = rootDataResults.filter((item) => {
+    if (!normalizedKeyword) return true;
+
+    const searchableText = [
+      item.author,
+      item.authorRole,
+      ...item.tags,
+      ...item.videos.flatMap((video) => [video.title, video.agent, video.category]),
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return searchableText.includes(normalizedKeyword);
+  });
+  const filteredUserResults = userResults.filter((item) => {
+    if (!normalizedKeyword) return true;
+
+    return [item.name, item.fans, item.rootDataCount, item.deals]
+      .join(' ')
+      .toLowerCase()
+      .includes(normalizedKeyword);
+  });
 
   return (
     <div className="flex justify-center bg-gray-100 min-h-screen font-sans">
+      <style>{SHARED_THEME_STYLES}</style>
       <div className="w-full max-w-[430px] h-screen bg-white flex flex-col shadow-2xl relative overflow-hidden animate-in slide-in-from-bottom duration-300">
-        <header className="flex items-center px-4 py-3 gap-3 shrink-0">
-          <button onClick={onClose} className="p-1 -ml-1 text-[#1F2329]">
-            <ArrowLeft size={24} />
-          </button>
-          <div className="flex-1 h-11 bg-[#F5F6F8] rounded-xl flex items-center px-3 gap-2">
-            <Search size={16} className="text-[#8F959E]" />
-            <input 
-              autoFocus
-              className="bg-transparent border-none outline-none text-[15px] flex-1 text-[#1F2329] placeholder:text-[#8F959E]"
-              placeholder="搜索感兴趣的内容..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-            {searchValue && (
-              <button onClick={() => setSearchValue('')}>
-                <X size={16} className="text-[#8F959E] bg-[#E5E6EB] rounded-full p-0.5" />
-              </button>
-            )}
+        <header className="shrink-0 bg-white">
+          <div className="flex items-center px-4 py-3 gap-3">
+            <button onClick={onClose} className="p-1 -ml-1 text-[#1F2329]">
+              <ArrowLeft size={24} />
+            </button>
+            <div className="flex-1 h-11 bg-[#F5F6F8] rounded-xl flex items-center px-3 gap-2">
+              <Search size={16} className="text-[#8F959E]" />
+              <input 
+                autoFocus
+                className="bg-transparent border-none outline-none text-[15px] flex-1 text-[#1F2329] placeholder:text-[#8F959E]"
+                placeholder="搜索感兴趣的内容..."
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearchAction();
+                  }
+                }}
+              />
+              {searchValue && (
+                <button onClick={() => setSearchValue('')}>
+                  <X size={16} className="text-[#8F959E] bg-[#E5E6EB] rounded-full p-0.5" />
+                </button>
+              )}
+            </div>
+            <button onClick={handleSearchAction} className="text-[15px] font-medium theme-text">搜索</button>
           </div>
-          <button onClick={onClose} className="text-[15px] font-medium theme-text">取消</button>
+
+          <nav className="flex h-11 items-center gap-4 bg-white px-4">
+            <button
+              type="button"
+              onClick={() => setActiveSearchTab('根数据')}
+              className={`relative flex h-full min-w-[72px] items-center justify-center transition-colors ${
+                activeSearchTab === '根数据' ? 'theme-text font-bold' : 'text-[#1F2329]'
+              }`}
+            >
+              <span className={`text-[14px] ${activeSearchTab === '根数据' ? 'font-bold' : 'font-normal'}`}>根数据</span>
+              {activeSearchTab === '根数据' && (
+                <span className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full theme-bg shadow-[0_1px_4px_rgba(114,101,227,0.3)]" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSearchTab('用户')}
+              className={`relative flex h-full min-w-[72px] items-center justify-center transition-colors ${
+                activeSearchTab === '用户' ? 'theme-text font-bold' : 'text-[#1F2329]'
+              }`}
+            >
+              <span className={`text-[14px] ${activeSearchTab === '用户' ? 'font-bold' : 'font-normal'}`}>用户</span>
+              {activeSearchTab === '用户' && (
+                <span className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full theme-bg shadow-[0_1px_4px_rgba(114,101,227,0.3)]" />
+              )}
+            </button>
+          </nav>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 no-scrollbar">
-          {history.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5 text-[14px] font-bold text-[#1F2329]">
-                  <Clock size={15} className="text-[#8F959E]" />
-                  最近搜索
-                </div>
-                <button onClick={() => setHistory([])} className="p-1">
-                  <Trash2 size={15} className="text-[#8F959E]" />
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {history.map(item => (
-                  <span key={item} className="px-3 py-1.5 bg-[#F5F6F8] rounded-lg text-[12px] text-[#646A73] cursor-pointer">{item}</span>
-                ))}
-              </div>
+        <div className="flex-1 overflow-y-auto bg-white no-scrollbar">
+          {activeSearchTab === '根数据' && (
+            <div className="divide-y divide-[#F5F6F8] bg-white">
+              {filteredRootDataResults.length > 0 ? (
+                filteredRootDataResults.slice(0, 8).map((item) => (
+                  <SearchRootDataCard key={item.id} data={item} onOpenPlayer={onOpenPlayer} />
+                ))
+              ) : (
+                <SearchEmptyState keyword={searchValue} label="根数据" />
+              )}
+            </div>
+          )}
+
+          {activeSearchTab === '用户' && (
+            <div className="divide-y divide-[#F5F6F8] bg-white">
+              {filteredUserResults.length > 0 ? (
+                filteredUserResults.slice(0, 8).map((leader) => (
+                  <LeaderItem key={leader.id} leader={leader} />
+                ))
+              ) : (
+                <SearchEmptyState keyword={searchValue} label="用户" />
+              )}
             </div>
           )}
         </div>
@@ -521,6 +596,85 @@ const SearchPage = ({ onClose }) => {
 };
 
 // --- 子组件 ---
+const SearchRootDataCard = ({ data, onOpenPlayer }) => {
+  const primaryVideo = data.videos[0];
+
+  return (
+    <button
+      type="button"
+      onClick={onOpenPlayer}
+      className="block w-full bg-white px-4 py-4 text-left transition-colors active:bg-[#FAFBFE]"
+    >
+      <div className="flex items-stretch gap-3">
+        <div className="relative min-h-[104px] w-[152px] shrink-0 self-stretch overflow-hidden rounded-2xl bg-[#EDEFF5]">
+          <img
+            src={primaryVideo.cover}
+            alt={primaryVideo.title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/55" />
+          <div className="absolute left-2 top-2 rounded-full bg-white/88 px-2 py-0.5 text-[10px] font-bold theme-text">
+            {primaryVideo.category}
+          </div>
+          <div className="absolute bottom-2 right-2 rounded bg-black/55 px-1.5 py-0.5 text-[10px] text-white">
+            {primaryVideo.duration}
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {data.tags.map((tag) => (
+              <span
+                key={`${data.id}-${tag}`}
+                className="rounded-full bg-[#F1F0FD] px-2 py-0.5 text-[10px] font-semibold theme-text"
+              >
+                {tag}
+              </span>
+            ))}
+            <span className="rounded-full bg-[#FFF4E5] px-2 py-0.5 text-[10px] font-semibold text-[#E79A23]">
+              {primaryVideo.agent}
+            </span>
+          </div>
+          <h3 className="line-clamp-2 text-[14px] font-bold leading-[1.45] text-[#1F2329]">
+            {primaryVideo.title}
+          </h3>
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              <img
+                src={data.authorAvatar}
+                alt={data.author}
+                className="h-7 w-7 rounded-full object-cover"
+                loading="lazy"
+              />
+              <div className="min-w-0">
+                <div className="truncate text-[12px] font-semibold text-[#1F2329]">{data.author}</div>
+                <div className="text-[10px] text-[#8F959E]">{data.authorRole}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-[#8F959E]">
+              <span>点赞 {primaryVideo.likes}</span>
+              <span>收藏 {primaryVideo.favorites}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+};
+
+const SearchEmptyState = ({ keyword, label }) => (
+  <div className="flex min-h-[220px] flex-col items-center justify-center px-6 text-center">
+    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F1F0FD]">
+      <Search size={20} className="theme-text" />
+    </div>
+    <div className="text-[15px] font-semibold text-[#1F2329]">暂无相关{label}</div>
+    <p className="mt-2 text-[12px] leading-5 text-[#8F959E]">
+      {keyword ? `没有找到和“${keyword}”相关的内容，换个关键词试试。` : `先输入关键词，看看匹配到哪些${label}。`}
+    </p>
+  </div>
+);
+
 const DashboardItem = ({ label, value, isTheme }) => (
   <div className="flex flex-col items-center flex-1">
     <span className="text-[10px] text-[#8F959E] mb-[1px]">{label}</span>
