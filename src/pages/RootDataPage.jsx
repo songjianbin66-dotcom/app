@@ -96,7 +96,7 @@ const TabTitleInput = ({ value, onChange }) => (
         onChange={onChange}
       />
       <span className="shrink-0 text-[13px] font-medium text-[#C9CDD7]">
-        {value.length}/100
+        {value.length}/20
       </span>
     </div>
   </div>
@@ -844,7 +844,7 @@ const App = () => {
                         type="button"
                         aria-label="新增步骤"
                         onClick={() => addStepAt(idx)}
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FF6A3D] text-white transition-transform active:scale-95"
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[#7265E3] text-white transition-transform active:scale-95"
                       >
                         <Plus size={12} strokeWidth={3} />
                       </button>
@@ -853,7 +853,7 @@ const App = () => {
                         aria-label="删除步骤"
                         onClick={() => removeStep(idx)}
                         disabled={mindmapData.steps.length === 1}
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FF6A3D] text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[#7265E3] text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         <Minus size={12} strokeWidth={3} />
                       </button>

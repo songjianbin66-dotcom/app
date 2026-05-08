@@ -8,6 +8,7 @@ import {
   Heart, 
   MessageSquare, 
   Share2,
+  Star,
   Home, 
   Grid, 
   User,
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react';
 
 const THEME_COLOR = '#7265E3';
+const INITIAL_ROOT_DATA_COUNT = 4;
+const ROOT_DATA_LOAD_STEP = 4;
 const VIDEO_COVER_SETS = [
   [
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
@@ -37,12 +40,45 @@ const VIDEO_COVER_SETS = [
   ],
 ];
 
+const parseCountLabel = (value) => {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  const normalizedValue = String(value).trim().toLowerCase();
+  const match = normalizedValue.match(/^(\d+(?:\.\d+)?)([kw])?$/);
+
+  if (!match) {
+    const numericValue = Number.parseInt(normalizedValue.replace(/[^\d]/g, ''), 10);
+    return Number.isNaN(numericValue) ? 0 : numericValue;
+  }
+
+  const [, amount, unit] = match;
+  const multiplier = unit === 'w' ? 10000 : unit === 'k' ? 1000 : 1;
+  return Math.round(Number.parseFloat(amount) * multiplier);
+};
+
+const formatCountLabel = (value) => {
+  if (value >= 10000) {
+    const scaledValue = value >= 100000 ? (value / 10000).toFixed(0) : (value / 10000).toFixed(1);
+    return `${scaledValue.replace(/\.0$/, '')}w`;
+  }
+
+  if (value >= 1000) {
+    const scaledValue = value >= 10000 ? (value / 1000).toFixed(0) : (value / 1000).toFixed(1);
+    return `${scaledValue.replace(/\.0$/, '')}k`;
+  }
+
+  return String(value);
+};
+
 const App = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('根数据');
   const [bottomTab, setBottomTab] = useState('首页');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isPromoVisible, setIsPromoVisible] = useState(true);
+  const [visibleRootDataCount, setVisibleRootDataCount] = useState(INITIAL_ROOT_DATA_COUNT);
   const [floatingButtonPos, setFloatingButtonPos] = useState({ x: 0, y: 0 });
   const phoneFrameRef = useRef(null);
   const floatingButtonRef = useRef(null);
@@ -74,6 +110,7 @@ const App = () => {
           agent: '企业策划智能体',
           duration: '01:20',
           likes: i % 2 === 0 ? '1.2k' : '936',
+          favorites: i % 2 === 0 ? '568' : '421',
           comments: i % 2 === 0 ? '234' : '168',
           shares: i % 2 === 0 ? '856' : '612',
           cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][0],
@@ -85,6 +122,7 @@ const App = () => {
           agent: '原文解读智能体',
           duration: '05:15',
           likes: i % 2 === 0 ? '978' : '742',
+          favorites: i % 2 === 0 ? '435' : '389',
           comments: i % 2 === 0 ? '186' : '142',
           shares: i % 2 === 0 ? '633' : '508',
           cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][1],
@@ -96,6 +134,7 @@ const App = () => {
           agent: '案例讲解智能体',
           duration: '03:45',
           likes: i % 2 === 0 ? '1.5k' : '1.1k',
+          favorites: i % 2 === 0 ? '826' : '644',
           comments: i % 2 === 0 ? '312' : '205',
           shares: i % 2 === 0 ? '924' : '688',
           cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][2],
@@ -315,13 +354,28 @@ const App = () => {
             <div className="bg-white">
               {activeTab === '根数据' && (
                 <div className="divide-y divide-[#F0F1F5]">
-                  {cardData.map((item) => (
+                  {cardData.slice(0, visibleRootDataCount).map((item) => (
                     <DataCard
                       key={item.id}
                       data={item}
                       onOpenPlayer={() => navigate('/player')}
                     />
                   ))}
+                  {visibleRootDataCount < cardData.length && (
+                    <div className="bg-white px-4 py-5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVisibleRootDataCount((current) =>
+                            Math.min(current + ROOT_DATA_LOAD_STEP, cardData.length)
+                          )
+                        }
+                        className="flex w-full items-center justify-center py-2 text-[15px] font-bold theme-text transition-opacity duration-200 active:opacity-70"
+                      >
+                        点击加载更多
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               {activeTab === '百大创始链主' && (
@@ -488,7 +542,26 @@ const TabItem = ({ label, active, onClick }) => (
 const DataCard = ({ data, onOpenPlayer }) => {
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [videoMetrics, setVideoMetrics] = useState(() =>
+    Object.fromEntries(
+      data.videos.map((video) => [
+        video.id,
+        {
+          likes: parseCountLabel(video.likes),
+          favorites: parseCountLabel(video.favorites),
+          liked: false,
+          favorited: false,
+        },
+      ])
+    )
+  );
   const currentVideo = data.videos[activeIndex] ?? data.videos[0];
+  const currentVideoMetric = videoMetrics[currentVideo.id] ?? {
+    likes: parseCountLabel(currentVideo.likes),
+    favorites: parseCountLabel(currentVideo.favorites),
+    liked: false,
+    favorited: false,
+  };
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -505,6 +578,29 @@ const DataCard = ({ data, onOpenPlayer }) => {
       });
       if (closestIdx !== activeIndex) setActiveIndex(closestIdx);
     }
+  };
+
+  const handleToggleMetric = (videoId, metricKey) => {
+    setVideoMetrics((prev) => {
+      const currentMetric = prev[videoId];
+
+      if (!currentMetric) {
+        return prev;
+      }
+
+      const statusKey = metricKey === 'likes' ? 'liked' : 'favorited';
+      const nextActive = !currentMetric[statusKey];
+      const delta = nextActive ? 1 : -1;
+
+      return {
+        ...prev,
+        [videoId]: {
+          ...currentMetric,
+          [metricKey]: Math.max(0, currentMetric[metricKey] + delta),
+          [statusKey]: nextActive,
+        },
+      };
+    });
   };
 
   return (
@@ -543,7 +639,28 @@ const DataCard = ({ data, onOpenPlayer }) => {
             </div>
           </div>
           <div className="flex items-center gap-4 text-[#8F959E]">
-            <div className="flex items-center gap-1"><Heart size={14} /><span className="text-[12px]">{currentVideo.likes}</span></div>
+            <button
+              type="button"
+              aria-label="点赞"
+              onClick={() => handleToggleMetric(currentVideo.id, 'likes')}
+              className={`inline-flex min-w-[52px] items-center gap-1 transition-colors duration-200 ${currentVideoMetric.liked ? 'theme-text' : 'text-[#8F959E]'}`}
+            >
+              <Heart size={14} fill={currentVideoMetric.liked ? 'currentColor' : 'none'} />
+              <span className="w-[30px] text-left text-[12px] tabular-nums">
+                {formatCountLabel(currentVideoMetric.likes)}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label="收藏"
+              onClick={() => handleToggleMetric(currentVideo.id, 'favorites')}
+              className={`inline-flex min-w-[52px] items-center gap-1 transition-colors duration-200 ${currentVideoMetric.favorited ? 'theme-text' : 'text-[#8F959E]'}`}
+            >
+              <Star size={14} fill={currentVideoMetric.favorited ? 'currentColor' : 'none'} />
+              <span className="w-[30px] text-left text-[12px] tabular-nums">
+                {formatCountLabel(currentVideoMetric.favorites)}
+              </span>
+            </button>
             <div className="flex items-center gap-1"><MessageSquare size={14} /><span className="text-[12px]">{currentVideo.comments}</span></div>
             <div className="flex items-center gap-1"><Share2 size={14} /><span className="text-[12px]">{currentVideo.shares}</span></div>
           </div>
