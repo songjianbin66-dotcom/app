@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 
-const THEME_COLOR = '#7265E3';
+const THEME_COLOR = '#C8161D';
 const INITIAL_ROOT_DATA_COUNT = 4;
 const ROOT_DATA_LOAD_STEP = 4;
 const SHARED_THEME_STYLES = `
@@ -310,7 +310,7 @@ const App = () => {
 
             {isPromoVisible && (
               <section className="px-4 pb-3">
-                <div className="relative overflow-hidden rounded-[15px] bg-[linear-gradient(135deg,#6E63E8_0%,#7569E6_52%,#6D64DD_100%)] px-4 pb-2.5 pt-2.5 text-white shadow-[0_10px_22px_rgba(114,101,227,0.16)]">
+                <div className="relative overflow-hidden rounded-[15px] bg-[#C8161D] px-4 pb-2.5 pt-2.5 text-white shadow-[0_10px_22px_rgba(200,22,29,0.16)]">
                   <button
                     type="button"
                     onClick={() => setIsPromoVisible(false)}
@@ -453,7 +453,7 @@ const App = () => {
               dragStateRef.current.pointerOffsetX = event.clientX - buttonRect.left;
               dragStateRef.current.pointerOffsetY = event.clientY - buttonRect.top;
             }}
-            className="absolute z-[60] flex h-[75px] w-[50px] touch-none flex-col items-center justify-center rounded-[22px] bg-[linear-gradient(180deg,#887BFF_0%,#7468E9_52%,#675CDE_100%)] text-white "
+            className="absolute z-[60] flex h-[75px] w-[50px] touch-none flex-col items-center justify-center rounded-[22px] bg-[#C8161D] text-white "
             style={{
               left: `${floatingButtonPos.x}px`,
               top: `${floatingButtonPos.y}px`,
@@ -547,7 +547,7 @@ const SearchPage = ({ onClose, rootDataResults = [], userResults = [], onOpenPla
             >
               <span className={`text-[14px] ${activeSearchTab === '根数据' ? 'font-bold' : 'font-normal'}`}>根数据</span>
               {activeSearchTab === '根数据' && (
-                <span className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full theme-bg shadow-[0_1px_4px_rgba(114,101,227,0.3)]" />
+                <span className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full theme-bg shadow-[0_1px_4px_rgba(200,22,29,0.3)]" />
               )}
             </button>
             <button
@@ -559,7 +559,7 @@ const SearchPage = ({ onClose, rootDataResults = [], userResults = [], onOpenPla
             >
               <span className={`text-[14px] ${activeSearchTab === '用户' ? 'font-bold' : 'font-normal'}`}>用户</span>
               {activeSearchTab === '用户' && (
-                <span className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full theme-bg shadow-[0_1px_4px_rgba(114,101,227,0.3)]" />
+                <span className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full theme-bg shadow-[0_1px_4px_rgba(200,22,29,0.3)]" />
               )}
             </button>
           </nav>
@@ -627,7 +627,7 @@ const SearchRootDataCard = ({ data, onOpenPlayer }) => {
             {data.tags.map((tag) => (
               <span
                 key={`${data.id}-${tag}`}
-                className="rounded-full bg-[#F1F0FD] px-2 py-0.5 text-[10px] font-semibold theme-text"
+                className="rounded-full bg-[#FCEBEC] px-2 py-0.5 text-[10px] font-semibold theme-text"
               >
                 {tag}
               </span>
@@ -665,7 +665,7 @@ const SearchRootDataCard = ({ data, onOpenPlayer }) => {
 
 const SearchEmptyState = ({ keyword, label }) => (
   <div className="flex min-h-[220px] flex-col items-center justify-center px-6 text-center">
-    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#F1F0FD]">
+    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#FCEBEC]">
       <Search size={20} className="theme-text" />
     </div>
     <div className="text-[15px] font-semibold text-[#1F2329]">暂无相关{label}</div>
@@ -688,7 +688,7 @@ const TabItem = ({ label, active, onClick }) => (
       {label}
     </span>
     {active && (
-      <div className="absolute bottom-[2px] h-[4px] w-[72px] theme-bg rounded-full shadow-[0_1px_4px_rgba(114,101,227,0.3)]" />
+      <div className="absolute bottom-[2px] h-[4px] w-[72px] theme-bg rounded-full shadow-[0_1px_4px_rgba(200,22,29,0.3)]" />
     )}
   </div>
 );
@@ -787,7 +787,7 @@ const DataCard = ({ data, onOpenPlayer }) => {
             </div>
             <div className="flex flex-col gap-1">
               <span className="text-[13px] font-medium leading-tight text-[#646A73]">{data.author}</span>
-              <span className="inline-flex w-fit items-center rounded-[4px] bg-[#F3F0FF] px-2 py-0.5 text-[8px] font-medium leading-none text-[#6A5ACD]">
+              <span className="inline-flex w-fit items-center rounded-[4px] bg-[#FDEBEC] px-2 py-0.5 text-[8px] font-medium leading-none text-[#A4151B]">
                 {data.authorRole}
               </span>
             </div>
@@ -886,7 +886,7 @@ const InstructorItem = ({ instructor }) => (
         <div className="ml-3">
           <div className="flex items-center gap-1.5">
             <span className="text-[15px] font-bold text-[#1F2329]">{instructor.name}</span>
-            <span className="bg-[#F1F0FD] theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider">审核通过率 {instructor.passRate}</span>
+            <span className="bg-[#FCEBEC] theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider">审核通过率 {instructor.passRate}</span>
           </div>
           <p className="text-[10px] text-[#8F959E] mt-0.5 font-medium">数智化认证指导师</p>
         </div>

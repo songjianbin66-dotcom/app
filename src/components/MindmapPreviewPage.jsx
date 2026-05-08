@@ -218,7 +218,7 @@ export default function MindmapPreviewPage({
                     onClick={() => onSelectTemplate?.(index)}
                     className={`min-w-0 rounded-[10px] border p-1 text-center transition-all ${
                       selectedTemplateIndex === index
-                        ? 'bg-[#F3F0FF] border-[#7265E3] shadow-[0_6px_16px_rgba(114,101,227,0.15)]'
+                        ? 'bg-[#FDEBEC] border-[#C8161D] shadow-[0_6px_16px_rgba(200,22,29,0.15)]'
                         : 'bg-white border-gray-200'
                     }`}
                   >
@@ -230,7 +230,7 @@ export default function MindmapPreviewPage({
                         OK
                       </span>
                     </div>
-                    <div className={`mt-1.5 truncate text-[10px] font-bold leading-tight ${selectedTemplateIndex === index ? 'text-[#7265E3]' : 'text-gray-500'}`}>
+                    <div className={`mt-1.5 truncate text-[10px] font-bold leading-tight ${selectedTemplateIndex === index ? 'text-[#C8161D]' : 'text-gray-500'}`}>
                       {style.name}
                     </div>
                   </button>
@@ -241,7 +241,7 @@ export default function MindmapPreviewPage({
 
           {showPrimaryAction ? (
             <div className="pb-4">
-              <div className="w-full py-3 bg-[#7265E3] text-white rounded-xl font-bold flex items-center justify-center text-[13px]">
+              <div className="w-full py-3 bg-[#C8161D] text-white rounded-xl font-bold flex items-center justify-center text-[13px]">
                 <span>{primaryActionLabel}</span>
               </div>
             </div>

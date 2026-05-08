@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 :root {
-  --accent-blue: #7265e3;
+  --accent-blue: #c8161d;
   --player-bg: #000000;
   --sheet-bg: #ffffff;
   --text-main: #1f2329;
@@ -928,7 +928,7 @@
 }
 
 .ok-classic {
-  color: #7265e3;
+  color: #c8161d;
   font-weight: 900;
   opacity: 0.04;
 }
@@ -957,14 +957,14 @@
 }
 
 .ok-neon {
-  color: #7265e3;
+  color: #c8161d;
   filter: blur(2px);
   font-weight: 900;
   opacity: 0.05;
 }
 
 .ok-preview-classic {
-  color: #7265e3;
+  color: #c8161d;
   font-weight: 900;
   opacity: 0.8;
 }
@@ -992,7 +992,7 @@
 }
 
 .ok-preview-neon {
-  color: #7265e3;
+  color: #c8161d;
   font-weight: 900;
   opacity: 0.85;
 }

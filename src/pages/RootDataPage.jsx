@@ -31,7 +31,7 @@ import {
 import './player.css';
 import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
 
-const THEME_COLOR = '#7265E3';
+const THEME_COLOR = '#C8161D';
 
 const DEFAULT_VIDEO_COVERS = [
   'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
@@ -122,16 +122,16 @@ const App = () => {
 
   const okStyles = [
     {
-      name: '经典紫',
-      className: 'bg-gradient-to-r from-[#A695FF] via-[#7265E3] to-[#5146E5] bg-clip-text text-transparent font-black opacity-[0.10] tracking-[-10px]',
+      name: '经典红',
+      className: 'text-[#C8161D] font-black opacity-[0.10] tracking-[-10px]',
       extra: {
         transform: 'rotate(-11deg) scale(1.04)',
-        filter: 'drop-shadow(0 0 18px rgba(114,101,227,0.16))',
+        filter: 'drop-shadow(0 0 18px rgba(200,22,29,0.16))',
       },
-      previewClassName: 'bg-gradient-to-r from-[#A695FF] via-[#7265E3] to-[#5146E5] bg-clip-text text-transparent font-black',
+      previewClassName: 'text-[#C8161D] font-black',
       previewExtra: {
         transform: 'rotate(-8deg)',
-        filter: 'drop-shadow(0 0 8px rgba(114,101,227,0.18))',
+        filter: 'drop-shadow(0 0 8px rgba(200,22,29,0.18))',
       }
     },
     {
@@ -145,14 +145,14 @@ const App = () => {
       name: '描边风',
       className: 'text-transparent font-black opacity-[0.12] tracking-[-8px]',
       extra: {
-        WebkitTextStroke: '3px #7A74E8',
-        textShadow: '8px 10px 0 rgba(122,116,232,0.08)',
+        WebkitTextStroke: '3px #C8161D',
+        textShadow: '8px 10px 0 rgba(200,22,29,0.08)',
         transform: 'rotate(-7deg)',
       },
       previewClassName: 'text-transparent font-black',
       previewExtra: {
-        WebkitTextStroke: '1.6px #7A74E8',
-        textShadow: '4px 5px 0 rgba(122,116,232,0.12)',
+        WebkitTextStroke: '1.6px #C8161D',
+        textShadow: '4px 5px 0 rgba(200,22,29,0.12)',
         transform: 'rotate(-6deg)',
       }
     },
@@ -169,16 +169,16 @@ const App = () => {
       }
     },
     {
-      name: '霓虹紫',
-      className: 'text-[#7B68FF] font-black opacity-[0.11] tracking-[-6px]',
+      name: '霓虹红',
+      className: 'text-[#D92B32] font-black opacity-[0.11] tracking-[-6px]',
       extra: {
         transform: 'rotate(9deg) scale(1.02)',
-        textShadow: '0 0 20px rgba(123,104,255,0.42), 0 0 52px rgba(123,104,255,0.20)',
+        textShadow: '0 0 20px rgba(217,43,50,0.42), 0 0 52px rgba(217,43,50,0.20)',
       },
-      previewClassName: 'text-[#7B68FF] font-black',
+      previewClassName: 'text-[#D92B32] font-black',
       previewExtra: {
         transform: 'rotate(7deg)',
-        textShadow: '0 0 10px rgba(123,104,255,0.46), 0 0 22px rgba(123,104,255,0.24)',
+        textShadow: '0 0 10px rgba(217,43,50,0.46), 0 0 22px rgba(217,43,50,0.24)',
       }
     }
   ];
@@ -552,10 +552,10 @@ const App = () => {
             onClick={onAdd}
             className="flex min-h-[150px] w-full flex-col items-center justify-center rounded-[24px]  px-3 py-6 text-center"
           >
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,#8C7BFF_0%,#7265E3_55%,#5C50D6_100%)] text-white ]">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#C8161D] text-white ]">
               <Plus size={20} strokeWidth={2.8} />
             </div>
-            <div className="text-[14px]  text-[#4B3FD5]">
+            <div className="text-[14px]  text-[#B11319]">
               添加视频
             </div>
             <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
@@ -586,7 +586,7 @@ const App = () => {
         <div className="flex items-center gap-1">
           <div
             onClick={saveLectureEpisode}
-            className="flex h-10 items-center px-2 text-[16px] font-bold text-[#7265E3]"
+            className="flex h-10 items-center px-2 text-[16px] font-bold text-[#C8161D]"
             onKeyDown={(event) => handleDivActionKeyDown(event, saveLectureEpisode)}
             role="button"
             tabIndex={0}
@@ -603,7 +603,7 @@ const App = () => {
             <input
               value={activeLectureEpisode.title}
               onChange={(e) => updateLectureEpisodeTitle(activeLectureEpisode.id, e.target.value.slice(0, 30))}
-              className="h-12 w-full rounded-xl border border-[#E5E7EB] px-3 pr-14 text-[16px] font-medium text-[#1F2937] outline-none transition-colors focus:border-[#7265E3]"
+              className="h-12 w-full rounded-xl border border-[#E5E7EB] px-3 pr-14 text-[16px] font-medium text-[#1F2937] outline-none transition-colors focus:border-[#C8161D]"
               placeholder={`第 ${activeLectureEpisodeIndex + 1} 集标题`}
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-gray-400">
@@ -614,8 +614,8 @@ const App = () => {
 
         <div className="mb-7">
           <div className="mb-3 text-[13px] font-bold text-[#4B5563]">视频</div>
-          <div className="overflow-hidden rounded-xl bg-[#F8F7FF] shadow-[0_1px_0_rgba(17,24,39,0.04)]">
-            <div className="relative aspect-video overflow-hidden bg-[linear-gradient(135deg,#6B5FF4_0%,#8D68E8_58%,#A988F2_100%)]">
+          <div className="overflow-hidden rounded-xl bg-[#FFF3F4] shadow-[0_1px_0_rgba(17,24,39,0.04)]">
+            <div className="relative aspect-video overflow-hidden bg-[#C8161D]">
               {activeLectureEpisode.video?.cover && (
                 <img
                   src={activeLectureEpisode.video.cover}
@@ -640,7 +640,7 @@ const App = () => {
 
             {activeLectureEpisode.video ? (
               <div className="flex items-center gap-3 bg-[#FAFAFC] px-4 py-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#7265E3] text-white">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C8161D] text-white">
                   <Video size={15} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -662,7 +662,7 @@ const App = () => {
               <div
                 onClick={() => addQuickVideo('lecture')}
                 onKeyDown={(event) => handleDivActionKeyDown(event, () => addQuickVideo('lecture'))}
-                className="flex w-full items-center justify-center gap-2 bg-[#FAFAFC] px-4 py-4 text-[14px] font-bold text-[#7265E3]"
+                className="flex w-full items-center justify-center gap-2 bg-[#FAFAFC] px-4 py-4 text-[14px] font-bold text-[#C8161D]"
                 role="button"
                 tabIndex={0}
               >
@@ -675,7 +675,7 @@ const App = () => {
           <div
             onClick={() => addQuickVideo('lecture')}
             onKeyDown={(event) => handleDivActionKeyDown(event, () => addQuickVideo('lecture'))}
-            className="mt-4 flex h-[58px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#C9C3F6] text-[#7265E3] active:bg-[#F8F7FF]"
+            className="mt-4 flex h-[58px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#F1B8BB] text-[#C8161D] active:bg-[#FFF3F4]"
             role="button"
             tabIndex={0}
           >
@@ -747,7 +747,7 @@ const App = () => {
         </div>
         <div 
           onClick={handleSubmit}
-          className="rounded-full bg-[#7265E3] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
+          className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
         >
           提交审核
         </div>
@@ -763,13 +763,13 @@ const App = () => {
           {rootTags.map((tag) => (
             <div
               key={tag}
-              className="flex h-[25px] items-center gap-1 rounded-full bg-[#F1EEFF] px-2 text-[#7265E3]"
+              className="flex h-[25px] items-center gap-1 rounded-full bg-[#FCEAEC] px-2 text-[#C8161D]"
             >
               <span className="text-[12px] font-semibold leading-none tracking-[0.01em]">{tag}</span>
               <div
                  aria-label={`删除标签${tag}`}
                 onClick={() => removeRootTag(tag)}
-                className="flex h-3 w-3 items-center justify-center rounded-full text-[#7265E3] "
+                className="flex h-3 w-3 items-center justify-center rounded-full text-[#C8161D] "
               >
                 <X size={10} strokeWidth={2.25} />
               </div>
@@ -777,7 +777,7 @@ const App = () => {
           ))}
 
           {rootTags.length < 5 && (
-            <div className="flex min-w-[120px] flex-1 items-center border-b-2 border-[#7265E3] pb-0.5">
+            <div className="flex min-w-[120px] flex-1 items-center border-b-2 border-[#C8161D] pb-0.5">
               <input
                 type="text"
                 value={rootTagInput}
@@ -807,7 +807,7 @@ const App = () => {
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
               className={`flex-1 h-11 flex items-center justify-center relative transition-all ${
-                activeTab === tab.id ? 'text-[#7265E3]' : 'text-gray-500'
+                activeTab === tab.id ? 'text-[#C8161D]' : 'text-gray-500'
               }`}
             >
               <div className="flex items-center gap-1.5">
@@ -815,7 +815,7 @@ const App = () => {
                 <span className={`text-[14px] transition-colors ${activeTab === tab.id ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
               </div>
               {activeTab === tab.id && (
-                <div className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full bg-[#7265E3]" />
+                <div className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full bg-[#C8161D]" />
               )}
             </button>
           );
@@ -838,13 +838,13 @@ const App = () => {
                 {mindmapData.steps.map((step, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <span className="shrink-0 min-w-7 text-[#3F3F46] text-[14px]">{idx + 1}.</span>
-                    <input className="flex-1 border-b border-[#A1A1AA] px-1 outline-none text-[#7265E3] py-1 text-[14px]" value={step} onChange={(e) => updateStep(idx, e.target.value)} />
+                    <input className="flex-1 border-b border-[#A1A1AA] px-1 outline-none text-[#C8161D] py-1 text-[14px]" value={step} onChange={(e) => updateStep(idx, e.target.value)} />
                     <div className="ml-2 flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         aria-label="新增步骤"
                         onClick={() => addStepAt(idx)}
-                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[#7265E3] text-white transition-transform active:scale-95"
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C8161D] text-white transition-transform active:scale-95"
                       >
                         <Plus size={12} strokeWidth={3} />
                       </button>
@@ -853,7 +853,7 @@ const App = () => {
                         aria-label="删除步骤"
                         onClick={() => removeStep(idx)}
                         disabled={mindmapData.steps.length === 1}
-                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[#7265E3] text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C8161D] text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         <Minus size={12} strokeWidth={3} />
                       </button>
@@ -876,7 +876,7 @@ const App = () => {
               <button
                 type="button"
                 onClick={handleMindmapComplete}
-                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[linear-gradient(90deg,#5B43F2_0%,#7A63FF_100%)] text-[18px] font-bold text-white shadow-[0_18px_32px_rgba(91,67,242,0.28)]"
+                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white shadow-[0_18px_32px_rgba(200,22,29,0.28)]"
               >
                 保存草稿
               </button>
@@ -939,7 +939,7 @@ const App = () => {
                 <div
                   onClick={addLectureEpisode}
                   onKeyDown={(event) => handleDivActionKeyDown(event, addLectureEpisode)}
-                  className="flex h-[28px] items-center gap-1.5 rounded-full bg-[#7265E3] px-4 text-[11px]  text-white shadow-[0_8px_18px_rgba(114,101,227,0.24)] active:scale-95"
+                  className="flex h-[28px] items-center gap-1.5 rounded-full bg-[#C8161D] px-4 text-[11px]  text-white shadow-[0_8px_18px_rgba(200,22,29,0.24)] active:scale-95"
                   role="button"
                   tabIndex={0}
                 >
@@ -959,7 +959,7 @@ const App = () => {
                       className="w-full rounded-xl border border-[#EEF0F4] bg-white p-4 text-left shadow-[0_4px_16px_rgba(17,24,39,0.03)]"
                     >
                       <div className="relative mb-4 flex items-start gap-3">
-                        <span className="shrink-0 rounded-[5px] bg-[#F0EDFF] px-3 py-[4px] text-[8px] font-black text-[#7265E3]">
+                        <span className="shrink-0 rounded-[5px] bg-[#FCEAEC] px-3 py-[4px] text-[8px] font-black text-[#C8161D]">
                           第{idx + 1}集
                         </span>
                         <div className="min-w-0 flex-1 pt-0.5 text-[11px] font-bold text-[#111827]">
@@ -1014,7 +1014,7 @@ const App = () => {
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <div className={`relative h-[112px] w-full shrink-0 overflow-hidden rounded-lg ${hasVideo ? 'bg-[linear-gradient(135deg,#6B5FF4_0%,#8D68E8_58%,#A988F2_100%)]' : 'bg-[#F5F6F8]'}`}>
+                        <div className={`relative h-[112px] w-full shrink-0 overflow-hidden rounded-lg ${hasVideo ? 'bg-[#C8161D]' : 'bg-[#F5F6F8]'}`}>
                           {hasVideo ? (
                             <>
                               {episode.video.cover && (
@@ -1110,7 +1110,7 @@ const App = () => {
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {mockLibraryVideos.map(video => (
-          <div key={video.id} className="flex items-center p-3 border border-gray-100 rounded-xl hover:bg-[#F3F0FF] cursor-pointer" onClick={() => { addVideoToTarget(activeTab === 'mindmap' ? 'mindmap' : activeTab === 'text' ? 'origin' : 'lecture', { title: video.title, source: 'library', duration: video.duration, size: video.size, cover: video.cover }); setView('create'); }}>
+          <div key={video.id} className="flex items-center p-3 border border-gray-100 rounded-xl hover:bg-[#FDEBEC] cursor-pointer" onClick={() => { addVideoToTarget(activeTab === 'mindmap' ? 'mindmap' : activeTab === 'text' ? 'origin' : 'lecture', { title: video.title, source: 'library', duration: video.duration, size: video.size, cover: video.cover }); setView('create'); }}>
             <div className="relative mr-4 h-16 w-16 overflow-hidden rounded-lg bg-gray-100">
               <img src={video.cover} alt={`${video.title}封面`} className="h-full w-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -1118,7 +1118,7 @@ const App = () => {
               </div>
             </div>
             <div className="flex-1"><div className="font-medium text-gray-800">{video.title}</div><div className="text-xs text-gray-400 mt-1">{video.duration} · {video.date}</div></div>
-            <div className="p-2 text-[#7265E3]"><Plus size={20} /></div>
+            <div className="p-2 text-[#C8161D]"><Plus size={20} /></div>
           </div>
         ))}
       </div>
