@@ -54,9 +54,15 @@ function makeMindmapContent(action, keyPoint, target, goal) {
 
 function makeOriginalContent(title, focus) {
   return `
-    <p>${title} 的核心，是把原本散落在经验、会议和内容里的知识，整理成可以播放、可以复盘、可以协作传播的根数据。</p>
-    <p>在这个过程中，${focus} 不是一句口号，而是一套可以被反复训练的工作方式。每个节点都需要对应清晰的表达、真实的视频材料，以及能够被用户理解的行动路径。</p>
-    <p>当脑图负责结构，原文负责语义，讲解负责传递时，一条根数据就能从“信息”变成“可执行的资产”。</p>
+    <p><strong>${title}</strong> 的核心，是把原本散落在经验、会议和内容里的知识，整理成可以播放、<u>可以复盘、可以协作传播的根数据</u>。</p>
+    <p>在这个过程中，<u>${focus}</u> 不是一句口号，<strong>而是一套可以被反复训练的工作方式。</strong>每个节点都需要对应清晰的表达、真实的视频材料，以及能够被用户理解的行动路径。</p>
+    <figure>
+      <img
+        src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
+        alt="${title} 配图"
+      />
+    </figure>
+    <p>当脑图负责结构，原文负责语义，讲解负责传递时，一条根数据就能从“信息”变成<strong>“可执行的资产”</strong>。</p>
   `;
 }
 
@@ -78,11 +84,7 @@ const rootDataFeed = [
       mindmap: {
         title: '战略拆解脑图',
         content: makeMindmapContent('建设产业数智链', '增长飞轮', '产业协作团队', '形成可持续成交闭环'),
-        videos: [
-          makeVideo('root-001-mindmap-1', '总览：增长飞轮脑图', 0, '02:18'),
-          makeVideo('root-001-mindmap-2', '节点：资源到资产', 1, '03:06'),
-          makeVideo('root-001-mindmap-3', '路径：成交闭环', 2, '02:42'),
-        ],
+        videos: [makeVideo('root-001-mindmap-1', '总览：增长飞轮脑图', 0, '02:18')],
         stats: { likes: '2.4w', comments: '842', favorites: '1.2w', shares: '转发' },
         comments: [
           makeComment(1, '访客', '访', 5, '这张脑图把复杂逻辑压得很清楚，能直接拿去复盘。'),
@@ -92,10 +94,7 @@ const rootDataFeed = [
       original: {
         title: '原文：产业升级的关键表述',
         content: makeOriginalContent('产业数智链增长模型', '增长飞轮'),
-        videos: [
-          makeVideo('root-001-original-1', '原文逐句阅读', 1, '04:10'),
-          makeVideo('root-001-original-2', '重点段落标注', 2, '02:56'),
-        ],
+        videos: [makeVideo('root-001-original-1', '原文逐句阅读', 1, '04:10')],
         stats: { likes: '1.8w', comments: '526', favorites: '9.6k', shares: '转发' },
         comments: [
           makeComment(3, '产品经理', '产', 24, '原文和讲解分开后，对比理解更轻松。'),
@@ -107,12 +106,16 @@ const rootDataFeed = [
         content: makeLectureContent(
           '先解释根数据的定义：它不是单条视频，而是一组能够互相证明、互相补充的内容结构。',
           '再拆落地动作：从脑图到原文，再到讲解，每一步都要能支撑用户继续理解。',
-          '最后看复盘指标：点赞、收藏、评论和分享分别反映不同层面的价值反馈。'
+          '最后看复盘指标：点赞、收藏、评论和分享分别反映不同层面的价值反馈。',
+          '补充案例拆解：把一条根数据放进真实业务场景，验证它是否能指导协作与成交。',
+          '测试集扩展：增加更多讲解集数，观察用户在多集切换时的理解节奏和完成率。'
         ),
         videos: [
           makeVideo('root-001-lecture-1', '讲解一：定义根数据', 2, '05:15'),
           makeVideo('root-001-lecture-2', '讲解二：落地动作', 0, '04:38'),
           makeVideo('root-001-lecture-3', '讲解三：复盘指标', 1, '03:44'),
+          makeVideo('root-001-lecture-4', '讲解四：案例拆解', 0, '04:12'),
+          makeVideo('root-001-lecture-5', '讲解五：测试集扩展', 2, '03:58'),
         ],
         stats: { likes: '3.1w', comments: '1.1k', favorites: '1.7w', shares: '转发' },
         comments: [
@@ -132,30 +135,31 @@ const rootDataFeed = [
       mindmap: {
         title: '脑图：人机协同路径',
         content: makeMindmapContent('搭建 AI 协作流程', '任务拆分', '知识工作者', '让复杂任务稳定交付'),
-        videos: [
-          makeVideo('root-002-mindmap-1', '协作链路总览', 1, '02:32'),
-          makeVideo('root-002-mindmap-2', '任务拆分方法', 0, '03:28'),
-        ],
+        videos: [makeVideo('root-002-mindmap-1', '协作链路总览', 1, '02:32')],
         stats: { likes: '5.2k', comments: '342', favorites: '982', shares: '转发' },
         comments: [makeComment(7, '设计师', '设', 16, '横向三段切换很符合学习时的思路。')],
       },
       original: {
         title: '原文：提示词协作原则',
         content: makeOriginalContent('AI 协作工作流', '任务拆分'),
-        videos: [
-          makeVideo('root-002-original-1', '原文精读', 2, '04:01'),
-          makeVideo('root-002-original-2', '规则摘录', 1, '03:16'),
-          makeVideo('root-002-original-3', '案例复盘', 0, '02:49'),
-        ],
+        videos: [makeVideo('root-002-original-1', '原文精读', 2, '04:01')],
         stats: { likes: '7.8k', comments: '419', favorites: '1.4k', shares: '转发' },
         comments: [makeComment(8, '运营同学', '运', 9, '原文部分单独收藏很有必要。')],
       },
       lecture: {
         title: '讲解：把提示词变成流程',
         content: makeLectureContent(
-          '把提示词从一次性输入，升级成团队可复用的流程模板，是 AI 协作真正提效的关键。'
+          '把提示词从一次性输入，升级成团队可复用的流程模板，是 AI 协作真正提效的关键。',
+          '补充一集流程接力演示，让角色切换、上下文传递和验收标准更清楚。',
+          '再补一集错误修正案例，展示当输出偏航时该如何拉回。',
+          '最后加入测试集回放，用来验证多集讲解下的信息承接是否自然。'
         ),
-        videos: [makeVideo('root-002-lecture-1', '流程搭建实操', 0, '06:20')],
+        videos: [
+          makeVideo('root-002-lecture-1', '流程搭建实操', 0, '06:20'),
+          makeVideo('root-002-lecture-2', '流程接力演示', 1, '05:06'),
+          makeVideo('root-002-lecture-3', '错误修正案例', 2, '04:18'),
+          makeVideo('root-002-lecture-4', '测试集回放', 0, '03:47'),
+        ],
         stats: { likes: '1.1w', comments: '608', favorites: '2.3k', shares: '转发' },
         comments: [makeComment(9, '创业者', '创', 37, '这段讲解最适合给新人看。')],
       },
@@ -178,10 +182,7 @@ const rootDataFeed = [
       original: {
         title: '原文：用户信任建立',
         content: makeOriginalContent('品牌内容成交路径', '用户信任建立'),
-        videos: [
-          makeVideo('root-003-original-1', '信任建立原文', 0, '03:05'),
-          makeVideo('root-003-original-2', '成交话术原文', 1, '03:50'),
-        ],
+        videos: [makeVideo('root-003-original-1', '信任建立原文', 0, '03:05')],
         stats: { likes: '6.6k', comments: '233', favorites: '1.9k', shares: '转发' },
         comments: [makeComment(11, '销售顾问', '销', 20, '原文可以直接摘到脚本里。')],
       },
@@ -189,11 +190,15 @@ const rootDataFeed = [
         title: '讲解：短视频成交拆解',
         content: makeLectureContent(
           '开场需要先建立问题意识，让用户知道这条内容为什么和自己有关。',
-          '转化节点不是硬推销，而是把信任、证据和行动建议自然连接起来。'
+          '转化节点不是硬推销，而是把信任、证据和行动建议自然连接起来。',
+          '补充一集评论区互动设计，帮助内容从观看延伸到咨询和留资。',
+          '再补一集复盘测试，观察多集讲解是否更容易沉淀成交脚本。'
         ),
         videos: [
           makeVideo('root-003-lecture-1', '开场结构拆解', 1, '04:27'),
           makeVideo('root-003-lecture-2', '转化节点拆解', 2, '05:02'),
+          makeVideo('root-003-lecture-3', '互动设计拆解', 0, '03:41'),
+          makeVideo('root-003-lecture-4', '复盘测试讲解', 1, '04:09'),
         ],
         stats: { likes: '1.6w', comments: '734', favorites: '5.8k', shares: '转发' },
         comments: [makeComment(12, '品牌主理人', '品', 28, '讲解把成交链路讲得很细。')],
@@ -249,6 +254,10 @@ function App() {
 
   const currentComments = currentSection.comments;
   const selectedSectionLabel = sectionTabs.find((tab) => tab.key === currentSectionKey)?.label;
+  const currentSectionHasEpisodes = currentSection.videos.length > 1;
+  const isEpisodeSheetOpen = activeSheet === 'episode' && currentSectionHasEpisodes;
+  const isCommentSheetOpen = activeSheet === 'comment';
+  const hasActiveSheet = isEpisodeSheetOpen || isCommentSheetOpen;
   const previewRoot = preview
     ? rootDataFeed.find((root) => root.id === preview.rootId)
     : null;
@@ -539,16 +548,18 @@ function App() {
 
                           <p className="root-title">{root.title}</p>
 
-                          <div
-                            className="episode-badge"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setActiveSheet('episode');
-                            }}
-                          >
-                            第 {videoIndex + 1} 个视频 / 共 {section.videos.length} 个
-                            <ChevronRight size={12} strokeWidth={3} />
-                          </div>
+                          {section.videos.length > 1 ? (
+                            <div
+                              className="episode-badge"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setActiveSheet('episode');
+                              }}
+                            >
+                              第 {videoIndex + 1} 个视频 / 共 {section.videos.length} 个
+                              <ChevronRight size={12} strokeWidth={3} />
+                            </div>
+                          ) : null}
                         </div>
                       </article>
                     );
@@ -621,14 +632,14 @@ function App() {
         </div>
 
         <button
-          aria-hidden={activeSheet === null}
-          className={`overlay-mask ${activeSheet ? 'active' : ''}`}
+          aria-hidden={!hasActiveSheet}
+          className={`overlay-mask ${hasActiveSheet ? 'active' : ''}`}
           onClick={() => setActiveSheet(null)}
           type="button"
         />
 
         <BottomSheet
-          open={activeSheet === 'episode'}
+          open={isEpisodeSheetOpen}
           title={`${selectedSectionLabel}视频 (${currentSection.videos.length})`}
           onClose={() => setActiveSheet(null)}
         >
@@ -649,7 +660,7 @@ function App() {
         </BottomSheet>
 
         <BottomSheet
-          open={activeSheet === 'comment'}
+          open={isCommentSheetOpen}
           title={`评论 (${currentSection.stats.comments})`}
           onClose={() => setActiveSheet(null)}
         >

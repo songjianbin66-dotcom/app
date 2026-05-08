@@ -744,6 +744,14 @@
   margin: 0 0 1px;
 }
 
+.original-preview strong {
+  font-weight: 800;
+}
+
+.original-preview u {
+  font-weight: 700;
+}
+
 .mindmap-preview .preview-mark {
   color: var(--accent-blue);
   font-weight: 700;
@@ -789,6 +797,26 @@
 
 .original-preview {
   padding-bottom: 10px;
+}
+
+.original-preview figure {
+  margin: 18px 0;
+}
+
+.original-preview img {
+  display: block;
+  width: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+}
+
+.original-preview figcaption {
+  margin-top: 10px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
 }
 
 .lecture-preview {
