@@ -292,9 +292,9 @@ const App = () => {
     };
 
     if (target === 'mindmap') {
-      setMindmapVideos(prev => [...prev, nextVideo]);
+      setMindmapVideos([nextVideo]);
     } else if (target === 'origin') {
-      setOriginContent(prev => ({ ...prev, videos: [...prev.videos, nextVideo] }));
+      setOriginContent(prev => ({ ...prev, videos: [nextVideo] }));
     } else {
       setLectureEpisodes(prev => prev.map(episode =>
         episode.id === activeLectureEpisodeId
@@ -311,6 +311,16 @@ const App = () => {
         : target === 'origin'
           ? originContent.videos.length
           : activeLectureEpisodeIndex + 1;
+
+    if (target === 'mindmap' && mindmapVideos.length >= 1) {
+      showToast('脑图仅支持添加 1 个视频');
+      return;
+    }
+
+    if (target === 'origin' && originContent.videos.length >= 1) {
+      showToast('原文仅支持添加 1 个视频');
+      return;
+    }
 
     addVideoToTarget(target, {
       title: target === 'lecture' ? `讲解视频_${count}` : `视频_${count + 1}`,
@@ -396,7 +406,7 @@ const App = () => {
     navigate('/');
   };
 
-  const AttachedVideoSection = ({ items, onAdd, onRemove }) => (
+  const AttachedVideoSection = ({ items, onAdd, onRemove, maxCount = Infinity }) => (
     <div className="rounded-[15px] border border-[#ECECF3] bg-white p-2 shadow-[0_10px_30px_rgba(17,24,39,0.04)]">
       <div className="space-y-4">
         {items.map((item) => (
@@ -440,21 +450,23 @@ const App = () => {
           </div>
         ))}
 
-        <button
-          type="button"
-          onClick={onAdd}
-          className="flex min-h-[150px] w-full flex-col items-center justify-center rounded-[24px] border border-dashed border-[#D9D4FF] bg-[#FDFCFF] px-6 py-6 text-center transition-colors hover:bg-[#FAF8FF]"
-        >
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,#8C7BFF_0%,#7265E3_55%,#5C50D6_100%)] text-white shadow-[0_14px_30px_rgba(114,101,227,0.28)]">
-            <Plus size={20} strokeWidth={2.8} />
+        {items.length < maxCount && (
+          <div
+            type="button"
+            onClick={onAdd}
+            className="flex min-h-[150px] w-full flex-col items-center justify-center rounded-[24px]  px-3 py-6 text-center"
+          >
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-[radial-gradient(circle_at_30%_30%,#8C7BFF_0%,#7265E3_55%,#5C50D6_100%)] text-white ]">
+              <Plus size={20} strokeWidth={2.8} />
+            </div>
+            <div className="text-[14px] font-bold text-[#4B3FD5]">
+              添加视频
+            </div>
+            <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
+              支持 MP4 / MOV / AVI 等格式，单个视频不超过 200MB
+            </div>
           </div>
-          <div className="text-[16px] font-bold text-[#4B3FD5]">
-            {items.length > 0 ? '继续添加视频' : '添加视频'}
-          </div>
-          <div className="mt-4 text-[12px] font-medium text-[#A1A1AA]">
-            支持 MP4 / MOV / AVI 等格式，单个视频不超过 200MB
-          </div>
-        </button>
+        )}
       </div>
     </div>
   );
@@ -488,7 +500,7 @@ const App = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-5">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-5 py-5">
         <div className="mb-6">
           <label className="mb-2 block text-[13px] font-bold text-[#4B5563]">集标题</label>
           <div className="relative">
@@ -622,6 +634,8 @@ const App = () => {
       return renderLectureEditPage();
     }
 
+    const isMindmapTab = activeTab === 'mindmap';
+
     return (
     <div className="flex flex-col h-full bg-white relative">
       {/* 顶部导航 */}
@@ -641,7 +655,7 @@ const App = () => {
           onClick={handleSubmit}
           className="rounded-full bg-[#7265E3] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
         >
-          提交
+          提交审核
         </div>
       </div>
 
@@ -683,10 +697,10 @@ const App = () => {
       </div>
 
       {/* 主内容区 */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === 'mindmap' && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl p-6 border border-gray-100 leading-8 text-[12px] text-gray-800">
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4">
+        {isMindmapTab && (
+          <div className="flex min-h-full flex-col gap-4">
+            <div className="bg-white rounded-xl p-6 border border-gray-100 leading-8 text-[14px] text-gray-800">
               做 <input className="inline-input" value={mindmapData.action} onChange={(e) => setMindmapData({...mindmapData, action: e.target.value})} /> 事，关键在于 <input className="inline-input" value={mindmapData.keyPoint} onChange={(e) => setMindmapData({...mindmapData, keyPoint: e.target.value})} />。<br />
               要针对 <input className="inline-input" value={mindmapData.target} onChange={(e) => setMindmapData({...mindmapData, target: e.target.value})} />，鉴于 <input className="inline-input" value={mindmapData.situation} onChange={(e) => setMindmapData({...mindmapData, situation: e.target.value})} /> 的形势，发挥 <input className="inline-input" value={mindmapData.advantage} onChange={(e) => setMindmapData({...mindmapData, advantage: e.target.value})} /> 的优势，本着 <input className="inline-input" value={mindmapData.principle} onChange={(e) => setMindmapData({...mindmapData, principle: e.target.value})} /> 的原则，运用 <input className="inline-input" value={mindmapData.method} onChange={(e) => setMindmapData({...mindmapData, method: e.target.value})} /> 的方法，通过如下步骤：
               
@@ -723,15 +737,19 @@ const App = () => {
 
             <AttachedVideoSection
               items={mindmapVideos}
+              maxCount={1}
               onAdd={() => addQuickVideo('mindmap')}
               onRemove={(id) => setMindmapVideos((prev) => prev.filter((video) => video.id !== id))}
             />
 
-            <div
-               onClick={handleMindmapComplete}
-              className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[linear-gradient(90deg,#5B43F2_0%,#7A63FF_100%)] text-[18px] font-bold text-white shadow-[0_18px_32px_rgba(91,67,242,0.28)]"
-            >
-              完成
+            <div className="mt-auto pt-2">
+              <button
+                type="button"
+                onClick={handleMindmapComplete}
+                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[linear-gradient(90deg,#5B43F2_0%,#7A63FF_100%)] text-[18px] font-bold text-white shadow-[0_18px_32px_rgba(91,67,242,0.28)]"
+              >
+                保存草稿
+              </button>
             </div>
           </div>
         )}
@@ -749,7 +767,7 @@ const App = () => {
                   <ImageIcon size={14} />
                 </button>
               </div>
-              <div ref={editorRef} contentEditable onInput={updateHtmlContent} className="p-4 flex-1 outline-none text-[15px] leading-relaxed overflow-y-auto" style={{ minHeight: '300px' }} dangerouslySetInnerHTML={{ __html: originContent.html }} />
+              <div ref={editorRef} contentEditable onInput={updateHtmlContent} className="p-4 flex-1 outline-none text-[15px] leading-relaxed overflow-y-auto no-scrollbar" style={{ minHeight: '300px' }} dangerouslySetInnerHTML={{ __html: originContent.html }} />
               {!originContent.html && (
                 <div className="absolute top-[88px] left-4 text-gray-300 pointer-events-none text-sm">
                   请输入原文内容...
@@ -758,6 +776,7 @@ const App = () => {
             </div>
             <AttachedVideoSection
               items={originContent.videos}
+              maxCount={1}
               onAdd={() => addQuickVideo('origin')}
               onRemove={(id) =>
                 setOriginContent((prev) => ({
@@ -914,6 +933,7 @@ const App = () => {
         }
         .inline-input:focus { border-bottom-color: ${THEME_COLOR}; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
     );
