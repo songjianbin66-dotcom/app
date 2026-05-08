@@ -306,7 +306,7 @@ const App = () => {
               </section>
             )}
 
-            <nav className="h-11 bg-white border-b-[0.5px] border-[#E5E6EB] flex sticky top-0 z-40">
+            <nav className="h-11 bg-white flex sticky top-0 z-40">
               <TabItem label="根数据" active={activeTab === '根数据'} onClick={() => setActiveTab('根数据')} />
               <TabItem label="百大创始链主" active={activeTab === '百大创始链主'} onClick={() => setActiveTab('百大创始链主')} />
               <TabItem label="数智指导师" active={activeTab === '数智指导师'} onClick={() => setActiveTab('数智指导师')} />

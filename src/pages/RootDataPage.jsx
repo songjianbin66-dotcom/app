@@ -85,13 +85,36 @@ const initialLectureEpisodes = [
   }),
 ];
 
+const TabTitleInput = ({ value, onChange }) => (
+  <div className="rounded-[10px] border border-[#ECEEF3] bg-white px-3 py-2">
+    <div className="flex items-center gap-4">
+      <input
+        type="text"
+        placeholder="请输入标题"
+        className="min-w-0 flex-1 border-none bg-transparent text-[13px]  text-[#1F2329] outline-none placeholder:text-[13px] placeholder:font-medium placeholder:text-[#C9CDD7]"
+        value={value}
+        onChange={onChange}
+      />
+      <span className="shrink-0 text-[13px] font-medium text-[#C9CDD7]">
+        {value.length}/100
+      </span>
+    </div>
+  </div>
+);
+
 const App = () => {
   const navigate = useNavigate();
   const [view, setView] = useState('create'); // 'create', 'browse', 'library'
   const [activeTab, setActiveTab] = useState('mindmap');
   const [isLectureEditorOpen, setIsLectureEditorOpen] = useState(false);
   const [openLectureMenuId, setOpenLectureMenuId] = useState(null);
-  const [title, setTitle] = useState('');
+  const [rootTags, setRootTags] = useState(['战略', '认知', '增长']);
+  const [rootTagInput, setRootTagInput] = useState('');
+  const [tabTitles, setTabTitles] = useState({
+    mindmap: '',
+    text: '',
+    video: '',
+  });
   const [toastMessage, setToastMessage] = useState('');
   
   const [okStyleIndex, setOkStyleIndex] = useState(0);
@@ -200,11 +223,14 @@ const App = () => {
     mindmapData.goal,
   ];
   const isMindmapComplete =
-    title.trim() !== '' &&
+    tabTitles.mindmap.trim() !== '' &&
     mindmapFields.every((value) => value.trim() !== '') &&
     mindmapData.steps.every((step) => step.trim() !== '');
-  const isOriginComplete = getPlainText(originContent.html) !== '';
+  const isOriginComplete =
+    tabTitles.text.trim() !== '' &&
+    getPlainText(originContent.html) !== '';
   const isLectureComplete =
+    tabTitles.video.trim() !== '' &&
     lectureEpisodes.length > 0 &&
     lectureEpisodes.every(
       (episode) =>
@@ -226,6 +252,45 @@ const App = () => {
 
   const showToast = (message) => {
     setToastMessage(message);
+  };
+
+  const addRootTag = () => {
+    const nextTag = rootTagInput.trim();
+
+    if (!nextTag) {
+      return;
+    }
+
+    if (rootTags.includes(nextTag)) {
+      showToast('该标签已存在');
+      return;
+    }
+
+    if (rootTags.length >= 5) {
+      showToast('最多添加 5 个标签');
+      return;
+    }
+
+    setRootTags((prev) => [...prev, nextTag]);
+    setRootTagInput('');
+  };
+
+  const removeRootTag = (tagToRemove) => {
+    setRootTags((prev) => prev.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleRootTagKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addRootTag();
+    }
+  };
+
+  const updateTabTitle = (tab, value) => {
+    setTabTitles((prev) => ({
+      ...prev,
+      [tab]: value.slice(0, 100),
+    }));
   };
 
   const openMindmapPreview = () => {
@@ -688,18 +753,50 @@ const App = () => {
         </div>
       </div>
 
-      <div className="bg-white p-4 shrink-0">
-        <input 
-          type="text" 
-          placeholder="请输入标题"
-          className="w-full text-[18px] placeholder-gray-300 outline-none font-medium" 
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+      <div className="border-b border-[#EEF0F4] bg-white px-4 py-3 shrink-0">
+        <div className="flex items-center gap-1.5">
+          <div className="text-[13px] font-bold text-[#1F2329]">根数据标签</div>
+          <AlertCircle size={14} className="text-[#A0A7B4]" />
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {rootTags.map((tag) => (
+            <div
+              key={tag}
+              className="flex h-[25px] items-center gap-1 rounded-full bg-[#F1EEFF] px-2 text-[#7265E3]"
+            >
+              <span className="text-[12px] font-semibold leading-none tracking-[0.01em]">{tag}</span>
+              <div
+                 aria-label={`删除标签${tag}`}
+                onClick={() => removeRootTag(tag)}
+                className="flex h-3 w-3 items-center justify-center rounded-full text-[#7265E3] "
+              >
+                <X size={10} strokeWidth={2.25} />
+              </div>
+            </div>
+          ))}
+
+          {rootTags.length < 5 && (
+            <div className="flex min-w-[120px] flex-1 items-center border-b-2 border-[#7265E3] pb-0.5">
+              <input
+                type="text"
+                value={rootTagInput}
+                onChange={(e) => setRootTagInput(e.target.value.slice(0, 12))}
+                onKeyDown={handleRootTagKeyDown}
+                placeholder="添加标签（回车创建）"
+                className="w-full border-none bg-transparent text-[10px] leading-none text-[#1F2329] outline-none placeholder:text-[#A0A7B4] placeholder:text-[12px]"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3 text-[11px] font-medium leading-4 text-[#A0A7B4]">
+          标签属于整个根数据，用于分类和检索，最多添加 5 个
+        </div>
       </div>
 
       {/* Tab 切换 */}
-      <div className="flex h-11 bg-white border-b-[0.5px] border-[#E5E6EB] shrink-0">
+      <div className="flex h-11 bg-white shrink-0">
         {[
           { id: 'mindmap', label: '脑图', icon: <Share2 size={18} /> },
           { id: 'text', label: '原文', icon: <FileText size={18} /> },
@@ -729,6 +826,10 @@ const App = () => {
       <div className="flex-1 overflow-y-auto no-scrollbar p-4">
         {activeTab === 'mindmap' && (
           <div className="flex min-h-full flex-col gap-4">
+            <TabTitleInput
+              value={tabTitles.mindmap}
+              onChange={(e) => updateTabTitle('mindmap', e.target.value)}
+            />
             <div className="bg-white rounded-xl p-6 border border-gray-100 leading-8 text-[14px] text-gray-800">
               做 <input className="inline-input" value={mindmapData.action} onChange={(e) => setMindmapData({...mindmapData, action: e.target.value})} /> 事，关键在于 <input className="inline-input" value={mindmapData.keyPoint} onChange={(e) => setMindmapData({...mindmapData, keyPoint: e.target.value})} />。<br />
               要针对 <input className="inline-input" value={mindmapData.target} onChange={(e) => setMindmapData({...mindmapData, target: e.target.value})} />，鉴于 <input className="inline-input" value={mindmapData.situation} onChange={(e) => setMindmapData({...mindmapData, situation: e.target.value})} /> 的形势，发挥 <input className="inline-input" value={mindmapData.advantage} onChange={(e) => setMindmapData({...mindmapData, advantage: e.target.value})} /> 的优势，本着 <input className="inline-input" value={mindmapData.principle} onChange={(e) => setMindmapData({...mindmapData, principle: e.target.value})} /> 的原则，运用 <input className="inline-input" value={mindmapData.method} onChange={(e) => setMindmapData({...mindmapData, method: e.target.value})} /> 的方法，通过如下步骤：
@@ -737,7 +838,7 @@ const App = () => {
                 {mindmapData.steps.map((step, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <span className="shrink-0 min-w-7 text-[#3F3F46] text-[14px]">{idx + 1}.</span>
-                    <input className="flex-1 border-b border-[#A1A1AA] px-1 outline-none text-[#7265E3] py-1 text-[11px]" value={step} onChange={(e) => updateStep(idx, e.target.value)} />
+                    <input className="flex-1 border-b border-[#A1A1AA] px-1 outline-none text-[#7265E3] py-1 text-[14px]" value={step} onChange={(e) => updateStep(idx, e.target.value)} />
                     <div className="ml-2 flex items-center gap-1 shrink-0">
                       <button
                         type="button"
@@ -785,6 +886,10 @@ const App = () => {
 
         {activeTab === 'text' && (
           <div className="space-y-4">
+            <TabTitleInput
+              value={tabTitles.text}
+              onChange={(e) => updateTabTitle('text', e.target.value)}
+            />
             <div className="bg-white rounded-xl flex flex-col border border-gray-100 overflow-hidden min-h-[400px] relative">
               <div className="p-2 bg-gray-50 border-b border-gray-100 flex items-center space-x-3 overflow-x-auto no-scrollbar shrink-0">
                 <div className="flex space-x-3 pr-2 border-r border-gray-200">
@@ -819,6 +924,10 @@ const App = () => {
 
         {activeTab === 'video' && (
           <div className="space-y-4">
+            <TabTitleInput
+              value={tabTitles.video}
+              onChange={(e) => updateTabTitle('video', e.target.value)}
+            />
             <div className="rounded-xl border border-[#EEF0F4] bg-white shadow-[0_10px_28px_rgba(17,24,39,0.04)]">
               <div className="flex items-center justify-between border-b border-[#EEF0F4] px-4 py-4">
                 <div>
@@ -957,7 +1066,7 @@ const App = () => {
       <style>{`
         .inline-input { 
           border: none; border-bottom: 1px solid #A1A1AA; margin: 0 4px; outline: none; 
-          width: 65px; text-align: center; color: ${THEME_COLOR}; font-weight: normal; font-size: 12px;
+          width: 65px; text-align: center; color: ${THEME_COLOR}; font-weight: inherit; font-size: inherit; line-height: inherit;
           background: transparent; transition: border-color 0.2s;
         }
         .inline-input:focus { border-bottom-color: ${THEME_COLOR}; }
@@ -973,7 +1082,7 @@ const App = () => {
     return (
       <MindmapPreviewPage
         headerTitle="脑图预览"
-        title={title}
+        title={tabTitles.mindmap}
         mindmapData={mindmapData}
         okStyle={okStyles[okStyleIndex]}
         onBack={() => setView('create')}
