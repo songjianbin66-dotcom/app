@@ -188,9 +188,9 @@ const App = () => {
 
   // 2. 百大创始链主数据
   const leaderData = [
-    { id: 1, name: '史宪文', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop', rootDataCount: 156, deals: 3205, fans: '12.5w', isFollowing: true },
-    { id: 2, name: '陈教授', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', rootDataCount: 89, deals: 1540, fans: '4.8w', isFollowing: true },
-    { id: 3, name: '王导师', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop', rootDataCount: 64, deals: 890, fans: '2.1w', isFollowing: false },
+    { id: 1, name: '史宪文', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop', rootDataCount: 156, deals: 3205, fans: '12.5w', isFollowing: true, tags: ['百大创始链主', '数智指导师'] },
+    { id: 2, name: '陈教授', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop', rootDataCount: 89, deals: 1540, fans: '4.8w', isFollowing: true, tags: ['百大创始链主'] },
+    { id: 3, name: '王导师', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop', rootDataCount: 64, deals: 890, fans: '2.1w', isFollowing: false, tags: ['百大创始链主', '数智指导师'] },
     ...Array.from({ length: 7 }).map((_, i) => ({
       id: i + 4,
       name: `链主_${i + 4}`,
@@ -198,7 +198,8 @@ const App = () => {
       rootDataCount: 12,
       deals: 156,
       fans: '0.5w',
-      isFollowing: false
+      isFollowing: false,
+      tags: ['百大创始链主'],
     }))
   ];
 
@@ -215,7 +216,8 @@ const App = () => {
       passRate: '98%',
       guidedCount: 1500,
       fansCount: '10.5w',
-      isFollowing: true
+      isFollowing: true,
+      tags: ['数智指导师', '百大创始链主'],
     },
     { 
       id: 2, 
@@ -228,7 +230,64 @@ const App = () => {
       passRate: '92%',
       guidedCount: 860,
       fansCount: '3.2w',
-      isFollowing: false
+      isFollowing: false,
+      tags: ['数智指导师', '百大创始链主'],
+    },
+    {
+      id: 3,
+      name: '周老师',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop',
+      rootDataCount: 72,
+      shareCount: 520,
+      shareDealCount: 98,
+      invitedCount: 134,
+      passRate: '95%',
+      guidedCount: 680,
+      fansCount: '2.6w',
+      isFollowing: false,
+      tags: ['数智指导师'],
+    },
+    {
+      id: 4,
+      name: '赵顾问',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
+      rootDataCount: 94,
+      shareCount: 740,
+      shareDealCount: 186,
+      invitedCount: 208,
+      passRate: '96%',
+      guidedCount: 1120,
+      fansCount: '4.1w',
+      isFollowing: true,
+      tags: ['数智指导师'],
+    },
+    {
+      id: 5,
+      name: '孙导师',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      rootDataCount: 63,
+      shareCount: 468,
+      shareDealCount: 85,
+      invitedCount: 116,
+      passRate: '91%',
+      guidedCount: 540,
+      fansCount: '1.9w',
+      isFollowing: false,
+      tags: ['数智指导师'],
+    },
+    {
+      id: 6,
+      name: '吴教练',
+      avatar: 'https://images.unsplash.com/photo-1502767089025-6572583495b0?w=100&h=100&fit=crop',
+      rootDataCount: 88,
+      shareCount: 690,
+      shareDealCount: 142,
+      invitedCount: 188,
+      passRate: '94%',
+      guidedCount: 930,
+      fansCount: '3.8w',
+      isFollowing: false,
+      tags: ['数智指导师'],
     }
   ];
 
@@ -924,6 +983,19 @@ const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   </button>
 );
 
+const UserTagList = ({ tags = [] }) => (
+  <div className="mt-1.5 flex flex-wrap gap-1.5">
+    {tags.map((tag) => (
+      <span
+        key={tag}
+        className="inline-flex items-center rounded-full bg-[#FCEBEC] px-2 py-0.5 text-[10px] font-semibold leading-none theme-text"
+      >
+        {tag}
+      </span>
+    ))}
+  </div>
+);
+
 const LeaderItem = ({ leader }) => (
   <div className="px-4 py-4 flex items-center bg-white active:bg-gray-50 transition-colors">
     <div className="shrink-0 w-[52px] h-[52px] rounded-full overflow-hidden bg-gray-100 shadow-sm border border-[#F0F0F0]">
@@ -936,6 +1008,7 @@ const LeaderItem = ({ leader }) => (
           {leader.isFollowing ? '已关注' : '+ 关注'}
         </div>
       </div>
+      <UserTagList tags={leader.tags} />
       <div className="flex items-center gap-3">
         <StatMini label="根数据" val={leader.rootDataCount} />
         <div className="w-[1px] h-2.5 bg-[#E5E6EB]" />
@@ -959,7 +1032,7 @@ const InstructorItem = ({ instructor }) => (
             <span className="text-[15px] font-bold text-[#1F2329]">{instructor.name}</span>
             <span className="bg-[#FCEBEC] theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider">审核通过率 {instructor.passRate}</span>
           </div>
-          <p className="text-[10px] text-[#8F959E] mt-0.5 font-medium">数智化认证指导师</p>
+          <UserTagList tags={instructor.tags} />
         </div>
       </div>
       <div className={`inline-flex h-6 items-center justify-center rounded-full border px-2 text-[12px] font-medium leading-none ${instructor.isFollowing ? 'bg-[#F5F6F8] text-[#8F959E] border-transparent' : 'bg-white theme-text theme-border'}`}>
