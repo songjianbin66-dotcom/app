@@ -45,43 +45,36 @@ const getSlotWidthForAngle = (angle, widths) => {
   return widths.narrow;
 };
 
-const getEllipseSlotPosition = (layout, angle, width) => {
+const getEllipseSlotPosition = (layout, angle, width, offset = {}) => {
   const radians = (angle * Math.PI) / 180;
-  const x = layout.centerX + layout.radiusX * Math.cos(radians);
-  const y = layout.centerY + layout.radiusY * Math.sin(radians);
+  const { xOffset = 0, yOffset = 0 } = offset;
+  const x = layout.centerX + layout.radiusX * Math.cos(radians) + xOffset;
+  const y = layout.centerY + layout.radiusY * Math.sin(radians) + yOffset;
 
   return toRelationPosition({ x, y, width });
 };
 
-const contentSlotAngles = Array.from({ length: 9 }, (_, index) => -90 + index * 40);
+const contentSlotConfigs = [
+  { key: 'c0', field: 'action', angle: -90, width: 188, yOffset: -12 },
+  { key: 'c1', field: 'keyPoint', angle: -50, width: 156, xOffset: 12, yOffset: -10 },
+  { key: 'c2', field: 'target', angle: -10, width: 148, xOffset: 14, yOffset: -4 },
+  { key: 'c3', field: 'situation', angle: 30, width: 156, xOffset: 18, yOffset: 8 },
+  { key: 'c4', field: 'advantage', angle: 70, width: 152, xOffset: 32, yOffset: 24 },
+  { key: 'c5', field: 'principle', angle: 110, width: 152, xOffset: -32, yOffset: 24 },
+  { key: 'c6', field: 'method', angle: 150, width: 156, xOffset: -18, yOffset: 8 },
+  { key: 'c7', field: 'time', angle: 190, width: 164, xOffset: -10 },
+  { key: 'c8', field: 'goal', angle: 230, width: 156, xOffset: -12, yOffset: -10 },
+];
 
 const createRelationPreviewSlots = (mindmapData) => {
-  const contentSlots = [
-    { key: 'c0', value: mindmapData.action },
-    { key: 'c1', value: mindmapData.keyPoint },
-    { key: 'c2', value: mindmapData.target },
-    { key: 'c3', value: mindmapData.situation },
-    { key: 'c4', value: mindmapData.advantage },
-    { key: 'c5', value: mindmapData.principle },
-    { key: 'c6', value: mindmapData.method },
-    { key: 'c7', value: mindmapData.time },
-    { key: 'c8', value: mindmapData.goal },
-  ].map((slot, index) => {
-    const angle = contentSlotAngles[index];
-
-    return {
-      ...slot,
-      position: getEllipseSlotPosition(
-        contentRingLayout,
-        angle,
-        getSlotWidthForAngle(angle, {
-          wide: 204,
-          medium: 166,
-          narrow: 138,
-        })
-      ),
-    };
-  });
+  const contentSlots = contentSlotConfigs.map((config) => ({
+    key: config.key,
+    value: mindmapData[config.field],
+    position: getEllipseSlotPosition(contentRingLayout, config.angle, config.width, {
+      xOffset: config.xOffset,
+      yOffset: config.yOffset,
+    }),
+  }));
 
   const stepSlotCount = Math.max(stepCircleLayout.minSlots, mindmapData.steps.length);
   const stepSlots = Array.from({ length: stepSlotCount }, (_, index) => {
