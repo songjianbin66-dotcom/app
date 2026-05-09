@@ -103,7 +103,7 @@ export default function MindmapPreviewPage({
   mindmapData,
   okStyle,
   onBack,
-  headerTitle = '脑图预览',
+  headerTitle = '',
   showTemplatePicker = false,
   templateOptions = [],
   selectedTemplateIndex = 0,
@@ -115,7 +115,7 @@ export default function MindmapPreviewPage({
 
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden relative">
-      <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0 bg-white z-20">
+      <div className="px-4 py-3 flex items-center border-b border-gray-100 shrink-0 bg-white z-20">
         <div className="flex items-center space-x-2">
           <button
             type="button"
@@ -125,7 +125,7 @@ export default function MindmapPreviewPage({
           >
             <ChevronLeft size={22} />
           </button>
-          <span className="font-bold text-lg">{headerTitle}</span>
+          {headerTitle ? <span className="font-bold text-lg">{headerTitle}</span> : null}
         </div>
       </div>
 
@@ -181,7 +181,7 @@ export default function MindmapPreviewPage({
           <section className="root-mindmap-complete bg-white">
             <article className="mindmap-preview mindmap-preview-template">
               <div className="mindmap-preview-content">
-                <h1 className="mb-3 text-[16px] font-bold leading-tight text-gray-900">{title}</h1>
+                <h1 className="mindmap-preview-title">{title}</h1>
                 <p>
                   做 <span className="preview-mark">{mindmapData.action}</span> 事，关键在于{' '}
                   <span className="preview-mark">{mindmapData.keyPoint}</span>。

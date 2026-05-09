@@ -934,7 +934,6 @@ function ContentPreviewPage({ onClose, section, sectionKey, videoIndex = 0 }) {
     <section className="content-preview-page">
       {sectionKey === 'mindmap' ? (
         <MindmapPreviewPage
-          headerTitle="脑图预览"
           title={section.title}
           mindmapData={section.content}
           okStyle={okStampStyle}

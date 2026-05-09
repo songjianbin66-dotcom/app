@@ -1100,7 +1100,6 @@ const App = () => {
   const renderBrowsePage = () => {
     return (
       <MindmapPreviewPage
-        headerTitle="脑图预览"
         title={tabTitles.mindmap}
         mindmapData={mindmapData}
         okStyle={okStyles[okStyleIndex]}

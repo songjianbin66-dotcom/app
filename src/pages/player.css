@@ -727,8 +727,9 @@
   margin: 0;
   overflow: hidden;
   color: #1f2329;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
+  line-height: 1.6;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -759,8 +760,8 @@
 .mindmap-preview,
 .original-preview {
   color: #242932;
-  font-size: 15px;
-  line-height: 1.85;
+  font-size: 16px;
+  line-height: 2;
 }
 
 .mindmap-preview-template {
@@ -796,9 +797,26 @@
   z-index: 1;
 }
 
-.mindmap-preview p,
+.mindmap-preview-title {
+  margin: 0 0 12px;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.mindmap-preview p {
+  margin: 0;
+  text-indent: 2em;
+}
+
 .original-preview p {
-  margin: 0 0 1px;
+  margin: 0 0 2em;
+  text-indent: 2em;
+}
+
+.original-preview p:last-child {
+  margin-bottom: 0;
 }
 
 .original-preview strong {
@@ -821,7 +839,7 @@
 .mindmap-steps {
   display: flex;
   flex-direction: column;
-  margin: 2px 0 0px;
+  margin: 8px 0;
   padding: 0;
   list-style: none;
 }
@@ -834,9 +852,9 @@
   /* border: 1px solid #edf0f5; */
   border-radius: 8px;
   /* background: #fafbfc; */
-  padding: 11px 12px;
-  font-size: 14px;
-  line-height: 1.55;
+  padding: 12px 12px 12px 16px;
+  font-size: 16px;
+  line-height: 2;
 }
 
 .mindmap-steps span {
@@ -857,7 +875,7 @@
 }
 
 .original-preview figure {
-  margin: 18px 0;
+  margin: 1.5em 0;
 }
 
 .original-preview img {
