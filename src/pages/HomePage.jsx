@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, 
   Cloud, 
@@ -126,9 +126,10 @@ const getVideoTitle = (index, category) => {
 
 const App = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('根数据');
   const [bottomTab, setBottomTab] = useState('首页');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(() => Boolean(location.state?.openSearch));
   const [isPromoVisible, setIsPromoVisible] = useState(true);
   const [visibleRootDataCount, setVisibleRootDataCount] = useState(INITIAL_ROOT_DATA_COUNT);
   const [floatingButtonPos, setFloatingButtonPos] = useState({ x: 0, y: 0 });
@@ -318,6 +319,12 @@ const App = () => {
   ];
 
   useEffect(() => {
+    if (location.state?.openSearch) {
+      setIsSearchOpen(true);
+    }
+  }, [location.key, location.state]);
+
+  useEffect(() => {
     const updateFloatingButtonPosition = () => {
       const container = phoneFrameRef.current;
       const button = floatingButtonRef.current;
@@ -381,10 +388,19 @@ const App = () => {
     };
   }, []);
 
+  const handleCloseSearch = () => {
+    if (location.state?.openSearchSource === 'player' && window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    setIsSearchOpen(false);
+  };
+
   if (isSearchOpen) {
     return (
       <SearchPage
-        onClose={() => setIsSearchOpen(false)}
+        onClose={handleCloseSearch}
         rootDataResults={cardData}
         userResults={leaderData}
         onOpenPlayer={openPlayer}
@@ -725,7 +741,14 @@ const SearchRootDataCard = ({ data, onOpenPlayer }) => {
   return (
     <button
       type="button"
-      onClick={onOpenPlayer}
+      onClick={() =>
+        onOpenPlayer?.({
+          action: 'play',
+          rootId: data.playerRootId,
+          sectionKey: primaryVideo.playerSectionKey,
+          videoId: primaryVideo.playerVideoId,
+        })
+      }
       className="block w-full bg-white px-4 py-4 text-left transition-colors active:bg-[#FAFBFE]"
     >
       <div className="flex items-stretch gap-3">
