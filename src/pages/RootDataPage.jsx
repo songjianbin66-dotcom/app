@@ -39,6 +39,12 @@ const DEFAULT_VIDEO_COVERS = [
   'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80',
   'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
 ];
+const MINDMAP_FIELD_MAX_CHARS = 10;
+
+const getCharacterCount = (value = '') => Array.from(value).length;
+const limitMindmapText = (value = '') =>
+  Array.from(value).slice(0, MINDMAP_FIELD_MAX_CHARS).join('');
+const getInlineInputWidth = (value = '') => `${Math.max(getCharacterCount(value) + 1, 4)}em`;
 
 const getDefaultVideoCover = (seed = 0) => DEFAULT_VIDEO_COVERS[Math.abs(seed) % DEFAULT_VIDEO_COVERS.length];
 
@@ -85,17 +91,23 @@ const initialLectureEpisodes = [
   }),
 ];
 
-const TabTitleInput = ({ value, onChange, placeholder = '请输入标题' }) => (
+const TabTitleInput = ({
+  value,
+  onChange,
+  placeholder = '请输入标题',
+  inputClassName = '',
+  counterClassName = '',
+}) => (
   <div className="rounded-[10px] border border-[#ECEEF3] bg-white px-3 py-2">
     <div className="flex items-center gap-4">
       <input
         type="text"
         placeholder={placeholder}
-        className="min-w-0 flex-1 border-none bg-transparent text-[13px]  text-[#1F2329] outline-none placeholder:text-[13px] placeholder:font-medium placeholder:text-[#C9CDD7]"
+        className={`min-w-0 flex-1 border-none bg-transparent text-[13px] text-[#1F2329] outline-none placeholder:text-[13px] placeholder:font-medium placeholder:text-[#C9CDD7] ${inputClassName}`}
         value={value}
         onChange={onChange}
       />
-      <span className="shrink-0 text-[13px] font-medium text-[#C9CDD7]">
+      <span className={`shrink-0 text-[13px] font-medium text-[#C9CDD7] ${counterClassName}`}>
         {value.length}/20
       </span>
     </div>
@@ -353,9 +365,28 @@ const App = () => {
     if (mindmapData.steps.length === 1) return;
     setMindmapData({ ...mindmapData, steps: mindmapData.steps.filter((_, i) => i !== idx) });
   };
+  const updateMindmapField = (field, value) => {
+    const nextValue = limitMindmapText(value);
+
+    if (getCharacterCount(value) > MINDMAP_FIELD_MAX_CHARS) {
+      showToast('每要素填写最多10个汉字');
+    }
+
+    setMindmapData((prev) => ({
+      ...prev,
+      [field]: nextValue,
+    }));
+  };
+
   const updateStep = (idx, val) => {
+    const nextValue = limitMindmapText(val);
+
+    if (getCharacterCount(val) > MINDMAP_FIELD_MAX_CHARS) {
+      showToast('每要素填写最多10个汉字');
+    }
+
     const newSteps = [...mindmapData.steps];
-    newSteps[idx] = val;
+    newSteps[idx] = nextValue;
     setMindmapData({ ...mindmapData, steps: newSteps });
   };
 
@@ -745,7 +776,7 @@ const App = () => {
     return (
     <div className="flex flex-col h-full bg-white relative">
       {/* 顶部导航 */}
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-b border-gray-200 shrink-0">
+      <div className="bg-white px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2">
           <button
             type="button"
@@ -842,16 +873,18 @@ const App = () => {
               value={tabTitles.mindmap}
               onChange={(e) => updateTabTitle('mindmap', e.target.value)}
               placeholder="请输入脑图标题"
+              inputClassName="text-[18px] font-bold leading-[1.6] placeholder:text-[18px] placeholder:font-medium"
+              counterClassName="text-[14px]"
             />
-            <div className="bg-white rounded-xl p-6 border border-gray-100 leading-8 text-[14px] text-gray-800">
-              做 <input className="inline-input" value={mindmapData.action} onChange={(e) => setMindmapData({...mindmapData, action: e.target.value})} /> 事，关键在于 <input className="inline-input" value={mindmapData.keyPoint} onChange={(e) => setMindmapData({...mindmapData, keyPoint: e.target.value})} />。<br />
-              要针对 <input className="inline-input" value={mindmapData.target} onChange={(e) => setMindmapData({...mindmapData, target: e.target.value})} />，鉴于 <input className="inline-input" value={mindmapData.situation} onChange={(e) => setMindmapData({...mindmapData, situation: e.target.value})} /> 的形势，发挥 <input className="inline-input" value={mindmapData.advantage} onChange={(e) => setMindmapData({...mindmapData, advantage: e.target.value})} /> 的优势，本着 <input className="inline-input" value={mindmapData.principle} onChange={(e) => setMindmapData({...mindmapData, principle: e.target.value})} /> 的原则，运用 <input className="inline-input" value={mindmapData.method} onChange={(e) => setMindmapData({...mindmapData, method: e.target.value})} /> 的方法，通过如下步骤：
+            <div className="bg-white rounded-xl p-6 border border-gray-100 text-[16px] leading-8 text-gray-800">
+              做 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.action) }} value={mindmapData.action} onChange={(e) => updateMindmapField('action', e.target.value)} /> 事，关键在于 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.keyPoint) }} value={mindmapData.keyPoint} onChange={(e) => updateMindmapField('keyPoint', e.target.value)} />。<br />
+              要针对 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.target) }} value={mindmapData.target} onChange={(e) => updateMindmapField('target', e.target.value)} />，鉴于 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.situation) }} value={mindmapData.situation} onChange={(e) => updateMindmapField('situation', e.target.value)} /> 的形势，发挥 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.advantage) }} value={mindmapData.advantage} onChange={(e) => updateMindmapField('advantage', e.target.value)} /> 的优势，本着 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.principle) }} value={mindmapData.principle} onChange={(e) => updateMindmapField('principle', e.target.value)} /> 的原则，运用 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.method) }} value={mindmapData.method} onChange={(e) => updateMindmapField('method', e.target.value)} /> 的方法，通过如下步骤：
               
               <div className="my-4 space-y-2">
                 {mindmapData.steps.map((step, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <span className="shrink-0 min-w-7 text-[#3F3F46] text-[14px]">{idx + 1}.</span>
-                    <input className="flex-1 border-b border-[#A1A1AA] px-1 outline-none text-[#C8161D] py-1 text-[14px]" value={step} onChange={(e) => updateStep(idx, e.target.value)} />
+                    <span className="shrink-0 min-w-7 text-[16px] text-[#3F3F46]">{idx + 1}.</span>
+                    <input className="flex-1 border-b border-[#A1A1AA] px-1 py-1 text-[16px] text-[#C8161D] outline-none" value={step} onChange={(e) => updateStep(idx, e.target.value)} />
                     <div className="ml-2 flex items-center gap-1 shrink-0">
                       <button
                         type="button"
@@ -875,7 +908,7 @@ const App = () => {
                 ))}
               </div>
 
-              经过 <input className="inline-input" value={mindmapData.time} onChange={(e) => setMindmapData({...mindmapData, time: e.target.value})} /> (机遇期)，实现 <input className="inline-input" value={mindmapData.goal} onChange={(e) => setMindmapData({...mindmapData, goal: e.target.value})} /> 的目标。
+              经过 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.time) }} value={mindmapData.time} onChange={(e) => updateMindmapField('time', e.target.value)} /> (机遇期)，实现 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.goal) }} value={mindmapData.goal} onChange={(e) => updateMindmapField('goal', e.target.value)} /> 的目标。
             </div>
 
             <AttachedVideoSection
