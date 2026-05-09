@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   X
 } from 'lucide-react';
+import { TiArrowForward } from 'react-icons/ti';
 
 const THEME_COLOR = '#C8161D';
 const INITIAL_ROOT_DATA_COUNT = 4;
@@ -97,6 +98,32 @@ const formatCountLabel = (value) => {
   return String(value);
 };
 
+const getVideoTitle = (index, category) => {
+  const sequence = `(${index + 1})`;
+
+  if (index % 2 === 0) {
+    if (category === '脑图') {
+      return `企业级 AI 智能体应用架构全景脑图 ${sequence}`;
+    }
+
+    if (category === '讲解') {
+      return `史宪文详解：企业如何落地 AI 智能体应用 ${sequence}`;
+    }
+
+    return `《企业级 AI 智能体应用架构》原文摘录与重点标注 ${sequence}`;
+  }
+
+  if (category === '脑图') {
+    return `产业数智链从 0 到 1 搭建路径图 ${sequence}`;
+  }
+
+  if (category === '讲解') {
+    return `史宪文实战复盘：产业数智链如何从 0 到 1 跑通 ${sequence}`;
+  }
+
+  return `《从 0 到 1 搭建产业数智链》原稿节选 ${sequence}`;
+};
+
 const App = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('根数据');
@@ -127,9 +154,6 @@ const App = () => {
 
   // 1. 根数据 - 10 条
   const cardData = Array.from({ length: 10 }).map((_, i) => {
-    const baseTitle = i % 2 === 0
-      ? `数智化赋能：如何构建企业级 AI 智能体应用架构 (${i + 1})`
-      : `从 0 到 1 搭建产业数智链：史宪文教授的实战经验分享 (${i + 1})`;
     const playerRootId = PLAYER_ROOT_IDS[i % PLAYER_ROOT_IDS.length];
 
     return {
@@ -147,7 +171,7 @@ const App = () => {
           category: '脑图',
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.脑图,
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.脑图),
-          title: `${baseTitle} · 脑图拆解`,
+          title: getVideoTitle(i, '脑图'),
           agent: '企业策划智能体',
           duration: '01:20',
           likes: i % 2 === 0 ? '1.2k' : '936',
@@ -157,31 +181,31 @@ const App = () => {
           cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][0],
         },
         {
-          id: `v${i}-source`,
-          category: '原文',
-          playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.原文,
-          playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.原文),
-          title: `${baseTitle} · 原文精读`,
-          agent: '原文解读智能体',
-          duration: '05:15',
-          likes: i % 2 === 0 ? '978' : '742',
-          favorites: i % 2 === 0 ? '435' : '389',
-          comments: i % 2 === 0 ? '186' : '142',
-          shares: i % 2 === 0 ? '633' : '508',
-          cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][1],
-        },
-        {
           id: `v${i}-explain`,
           category: '讲解',
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.讲解,
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.讲解),
-          title: `${baseTitle} · 案例讲解`,
+          title: getVideoTitle(i, '讲解'),
           agent: '案例讲解智能体',
           duration: '03:45',
           likes: i % 2 === 0 ? '1.5k' : '1.1k',
           favorites: i % 2 === 0 ? '826' : '644',
           comments: i % 2 === 0 ? '312' : '205',
           shares: i % 2 === 0 ? '924' : '688',
+          cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][1],
+        },
+        {
+          id: `v${i}-source`,
+          category: '原文',
+          playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.原文,
+          playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.原文),
+          title: getVideoTitle(i, '原文'),
+          agent: '原文解读智能体',
+          duration: '05:15',
+          likes: i % 2 === 0 ? '978' : '742',
+          favorites: i % 2 === 0 ? '435' : '389',
+          comments: i % 2 === 0 ? '186' : '142',
+          shares: i % 2 === 0 ? '633' : '508',
           cover: VIDEO_COVER_SETS[i % VIDEO_COVER_SETS.length][2],
         }
       ]
@@ -794,7 +818,7 @@ const TabItem = ({ label, active, onClick }) => (
 
 const DataCard = ({ data, onOpenPlayer }) => {
   const scrollRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(1);
   const [videoMetrics, setVideoMetrics] = useState(() =>
     Object.fromEntries(
       data.videos.map((video) => [
@@ -808,6 +832,16 @@ const DataCard = ({ data, onOpenPlayer }) => {
       ])
     )
   );
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const items = container.querySelectorAll('.snap-item');
+    const target = items[1];
+    if (target) {
+      container.scrollLeft = target.offsetLeft - (container.offsetWidth - target.offsetWidth) / 2;
+    }
+  }, []);
+
   const currentVideo = data.videos[activeIndex] ?? data.videos[0];
   const currentVideoMetric = videoMetrics[currentVideo.id] ?? {
     likes: parseCountLabel(currentVideo.likes),
@@ -869,7 +903,7 @@ const DataCard = ({ data, onOpenPlayer }) => {
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar gap-3 px-4"
+        className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar gap-3 px-5"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {data.videos.map((v, idx) => (
@@ -946,7 +980,7 @@ const DataCard = ({ data, onOpenPlayer }) => {
               onClick={() => openCurrentVideo('share')}
               className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
             >
-              <Share2 size={14} />
+              <TiArrowForward size={16} />
               <span className="text-[12px]">{currentVideo.shares}</span>
             </button>
           </div>
@@ -959,7 +993,7 @@ const DataCard = ({ data, onOpenPlayer }) => {
 const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   <button
     type="button"
-    className="snap-item w-[280px] snap-center relative rounded-xl overflow-hidden bg-[#1A1D21] h-[160px] flex-shrink-0 transition-all duration-300 shadow-md text-left cursor-pointer"
+    className="snap-item w-[200px] h-[260px] snap-center relative rounded-[10px] overflow-hidden bg-[#1A1D21] flex-shrink-0 transition-all duration-300 shadow-md text-left cursor-pointer"
     aria-label={`播放${video.category}视频，来自${video.agent}`}
     onClick={onOpenPlayer}
   >
@@ -1044,7 +1078,7 @@ const InstructorItem = ({ instructor }) => (
     <div className="grid grid-cols-2 gap-y-3 bg-[#FAFAFA] rounded-xl p-3 mb-4 border border-[#F0F0F0]">
       <StatBox label="根数据数量" val={instructor.rootDataCount} />
       <StatBox label="分享 / 成交" val={`${instructor.shareCount} / ${instructor.shareDealCount}`} />
-      <StatBox label="被邀请指导" val={instructor.invitedCount} />
+      <StatBox label="被邀请次数" val={instructor.invitedCount} />
       <StatBox label="指导人数" val={instructor.guidedCount} />
     </div>
     <div className="flex items-center justify-between">

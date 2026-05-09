@@ -6,17 +6,17 @@ import {
   Heart,
   MessageCircle,
   Play,
-  Share2,
   Star,
   X,
 } from 'lucide-react';
+import { TiArrowForward } from 'react-icons/ti';
 import './player.css';
 import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
 
 const sectionTabs = [
   { key: 'mindmap', label: '脑图' },
-  { key: 'original', label: '原文' },
   { key: 'lecture', label: '讲解' },
+  { key: 'original', label: '原文' },
 ];
 
 const okStampStyle = {
@@ -85,7 +85,7 @@ const rootDataFeed = [
         title: '战略拆解脑图',
         content: makeMindmapContent('建设产业数智链', '增长飞轮', '产业协作团队', '形成可持续成交闭环'),
         videos: [makeVideo('root-001-mindmap-1', '总览：增长飞轮脑图', 0, '02:18')],
-        stats: { likes: '2.4w', comments: '842', favorites: '1.2w', shares: '转发' },
+        stats: { likes: '2.4w', comments: '842', favorites: '1.2w', shares: '1.1w' },
         comments: [
           makeComment(1, '访客', '访', 5, '这张脑图把复杂逻辑压得很清楚，能直接拿去复盘。'),
           makeComment(2, '项目同事', '同', 15, '左右切换部分以后，学习节奏会更自然。'),
@@ -95,7 +95,7 @@ const rootDataFeed = [
         title: '原文：产业升级的关键表述',
         content: makeOriginalContent('产业数智链增长模型', '增长飞轮'),
         videos: [makeVideo('root-001-original-1', '原文逐句阅读', 1, '04:10')],
-        stats: { likes: '1.8w', comments: '526', favorites: '9.6k', shares: '转发' },
+        stats: { likes: '1.8w', comments: '526', favorites: '9.6k', shares: '8.3k' },
         comments: [
           makeComment(3, '产品经理', '产', 24, '原文和讲解分开后，对比理解更轻松。'),
           makeComment(4, '学习者', '学', 31, '这一段适合配合脑图反复看。'),
@@ -117,7 +117,7 @@ const rootDataFeed = [
           makeVideo('root-001-lecture-4', '讲解四：案例拆解', 0, '04:12'),
           makeVideo('root-001-lecture-5', '讲解五：测试集扩展', 2, '03:58'),
         ],
-        stats: { likes: '3.1w', comments: '1.1k', favorites: '1.7w', shares: '转发' },
+        stats: { likes: '3.1w', comments: '1.1k', favorites: '1.7w', shares: '1.4w' },
         comments: [
           makeComment(5, '体验官', '验', 23, '讲解视频更像是把方法真正讲活了。'),
           makeComment(6, '业务负责人', '业', 44, '可以直接作为团队培训材料。'),
@@ -136,14 +136,14 @@ const rootDataFeed = [
         title: '脑图：人机协同路径',
         content: makeMindmapContent('搭建 AI 协作流程', '任务拆分', '知识工作者', '让复杂任务稳定交付'),
         videos: [makeVideo('root-002-mindmap-1', '协作链路总览', 1, '02:32')],
-        stats: { likes: '5.2k', comments: '342', favorites: '982', shares: '转发' },
+        stats: { likes: '5.2k', comments: '342', favorites: '982', shares: '612' },
         comments: [makeComment(7, '设计师', '设', 16, '横向三段切换很符合学习时的思路。')],
       },
       original: {
         title: '原文：提示词协作原则',
         content: makeOriginalContent('AI 协作工作流', '任务拆分'),
         videos: [makeVideo('root-002-original-1', '原文精读', 2, '04:01')],
-        stats: { likes: '7.8k', comments: '419', favorites: '1.4k', shares: '转发' },
+        stats: { likes: '7.8k', comments: '419', favorites: '1.4k', shares: '956' },
         comments: [makeComment(8, '运营同学', '运', 9, '原文部分单独收藏很有必要。')],
       },
       lecture: {
@@ -160,7 +160,7 @@ const rootDataFeed = [
           makeVideo('root-002-lecture-3', '错误修正案例', 2, '04:18'),
           makeVideo('root-002-lecture-4', '测试集回放', 0, '03:47'),
         ],
-        stats: { likes: '1.1w', comments: '608', favorites: '2.3k', shares: '转发' },
+        stats: { likes: '1.1w', comments: '608', favorites: '2.3k', shares: '1.8k' },
         comments: [makeComment(9, '创业者', '创', 37, '这段讲解最适合给新人看。')],
       },
     },
@@ -176,14 +176,14 @@ const rootDataFeed = [
         title: '脑图：内容到成交',
         content: makeMindmapContent('设计内容成交路径', '信任建立', '品牌内容团队', '提升内容转化效率'),
         videos: [makeVideo('root-003-mindmap-1', '成交路径脑图', 2, '02:44')],
-        stats: { likes: '8.8k', comments: '126', favorites: '3.4k', shares: '转发' },
+        stats: { likes: '8.8k', comments: '126', favorites: '3.4k', shares: '743' },
         comments: [makeComment(10, '内容策划', '策', 49, '这个脑图适合做复盘模板。')],
       },
       original: {
         title: '原文：用户信任建立',
         content: makeOriginalContent('品牌内容成交路径', '用户信任建立'),
         videos: [makeVideo('root-003-original-1', '信任建立原文', 0, '03:05')],
-        stats: { likes: '6.6k', comments: '233', favorites: '1.9k', shares: '转发' },
+        stats: { likes: '6.6k', comments: '233', favorites: '1.9k', shares: '521' },
         comments: [makeComment(11, '销售顾问', '销', 20, '原文可以直接摘到脚本里。')],
       },
       lecture: {
@@ -200,7 +200,7 @@ const rootDataFeed = [
           makeVideo('root-003-lecture-3', '互动设计拆解', 0, '03:41'),
           makeVideo('root-003-lecture-4', '复盘测试讲解', 1, '04:09'),
         ],
-        stats: { likes: '1.6w', comments: '734', favorites: '5.8k', shares: '转发' },
+        stats: { likes: '1.6w', comments: '734', favorites: '5.8k', shares: '2.1k' },
         comments: [makeComment(12, '品牌主理人', '品', 28, '讲解把成交链路讲得很细。')],
       },
     },
@@ -708,7 +708,7 @@ function App() {
           </ActionButton>
 
           <ActionButton label={currentSection.stats.shares} onClick={() => {}} title="分享">
-            <Share2 size={28} />
+            <TiArrowForward size={30} />
           </ActionButton>
         </div>
 
@@ -784,7 +784,7 @@ function App() {
 }
 
 function getActiveSectionKey(root, activeSectionKeyByRootId) {
-  return activeSectionKeyByRootId[root.id] ?? 'mindmap';
+  return activeSectionKeyByRootId[root.id] ?? 'lecture';
 }
 
 function getActiveVideoIndex(activeVideoIndexBySectionId, sectionStateKey, total) {
