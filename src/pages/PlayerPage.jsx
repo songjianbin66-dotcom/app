@@ -726,9 +726,20 @@ function App() {
                           <p className="root-title">{root.title}</p>
 
                           {section.comments[0] ? (
-                            <p className="root-comment-preview">
+                            <div
+                              className="root-comment-preview"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setActiveRootIndex(rootIndex);
+                                setActiveSectionKeyByRootId((prev) => ({
+                                  ...prev,
+                                  [root.id]: tab.key,
+                                }));
+                                setActiveSheet('comment');
+                              }}
+                            >
                               {section.comments[0].author}：{section.comments[0].content}
-                            </p>
+                            </div>
                           ) : null}
 
                           {section.videos.length > 1 ? (

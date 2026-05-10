@@ -440,13 +440,23 @@
 
 .root-comment-preview {
   display: -webkit-box;
+  width: 100%;
   margin: 0 0 12px;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.88);
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255);
   font-size: 12px;
   line-height: 1.45;
+  padding: 0;
+  text-align: left;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+  transition: color 0.15s ease;
+}
+
+.root-comment-preview:active {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .video-description {
