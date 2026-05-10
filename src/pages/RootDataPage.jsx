@@ -45,6 +45,25 @@ const limitTitleText = (value = '') =>
 const getInlineInputWidth = (value = '') => `${Math.max(getCharacterCount(value) + 1, 4)}em`;
 
 const getDefaultVideoCover = (seed = 0) => DEFAULT_VIDEO_COVERS[Math.abs(seed) % DEFAULT_VIDEO_COVERS.length];
+const createVideoPlaceholderCover = (title = '视频预览') => {
+  const safeTitle = encodeURIComponent(title.slice(0, 18) || '视频预览');
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#C8161D" />
+          <stop offset="100%" stop-color="#1F2937" />
+        </linearGradient>
+      </defs>
+      <rect width="1280" height="720" rx="48" fill="url(#bg)" />
+      <circle cx="640" cy="320" r="88" fill="rgba(255,255,255,0.16)" />
+      <polygon points="620,272 620,368 698,320" fill="#FFFFFF" />
+      <text x="640" y="470" text-anchor="middle" fill="#FFFFFF" font-size="44" font-family="Arial, sans-serif" font-weight="700">${decodeURIComponent(safeTitle)}</text>
+      <text x="640" y="528" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-size="24" font-family="Arial, sans-serif">iOS 预览封面</text>
+    </svg>`
+  )}`;
+};
 const stripFileExtension = (value = '') => value.replace(/\.[^.]+$/, '');
 const truncateMiddle = (value = '', maxLength = 24) => {
   const chars = Array.from(value);
@@ -530,15 +549,18 @@ const App = () => {
   const createVideoDraftFromFile = (file) => new Promise((resolve) => {
     const objectUrl = URL.createObjectURL(file);
     trackObjectUrl(objectUrl);
+    const fallbackCover = createVideoPlaceholderCover(stripFileExtension(file.name));
 
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.src = objectUrl;
     video.muted = true;
     video.playsInline = true;
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('webkit-playsinline', 'true');
     let isResolved = false;
 
-    const finalize = (cover = '') => {
+    const finalize = (cover = fallbackCover) => {
       if (isResolved) {
         return;
       }
@@ -551,7 +573,7 @@ const App = () => {
         source: 'upload',
         size: formatFileSize(file.size),
         duration: formatDuration(video.duration),
-        cover,
+        cover: cover || fallbackCover,
         src: objectUrl,
         tags: [...DEFAULT_VIDEO_TAGS],
       });
@@ -566,7 +588,7 @@ const App = () => {
         context?.drawImage(video, 0, 0, canvas.width, canvas.height);
         finalize(canvas.toDataURL('image/jpeg', 0.82));
       } catch (error) {
-        finalize();
+        finalize(fallbackCover);
       }
     };
 
@@ -584,7 +606,8 @@ const App = () => {
       }
     }, { once: true });
 
-    video.addEventListener('error', () => finalize(), { once: true });
+    video.addEventListener('error', () => finalize(fallbackCover), { once: true });
+    window.setTimeout(() => finalize(fallbackCover), 1600);
   });
 
   const disposeVideoAsset = (video) => {
