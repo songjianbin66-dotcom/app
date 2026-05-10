@@ -245,10 +245,13 @@ const App = () => {
   const [okStyleIndex, setOkStyleIndex] = useState(0);
   const originEditorRef = useRef(null);
   const lectureEditorRef = useRef(null);
+  const imageFileInputRef = useRef(null);
   const videoFileInputRef = useRef(null);
   const uploadPreviewVideoRef = useRef(null);
   const createdObjectUrlsRef = useRef(new Set());
   const visualViewportBaselineRef = useRef(0);
+  const savedEditorSelectionRef = useRef(null);
+  const pendingImageEditorTypeRef = useRef('origin');
 
   const okStyles = [
     {
@@ -970,18 +973,109 @@ const App = () => {
   const getEditorRefByType = (editorType = 'origin') =>
     editorType === 'lecture' ? lectureEditorRef.current : originEditorRef.current;
 
+  const saveEditorSelection = (editorType = 'origin') => {
+    const editorElement = getEditorRefByType(editorType);
+    const selection = window.getSelection();
+
+    if (!editorElement || !selection || selection.rangeCount === 0) {
+      savedEditorSelectionRef.current = null;
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    if (!editorElement.contains(range.commonAncestorContainer)) {
+      savedEditorSelectionRef.current = null;
+      return;
+    }
+
+    savedEditorSelectionRef.current = range.cloneRange();
+  };
+
+  const restoreEditorSelection = (editorType = 'origin') => {
+    const editorElement = getEditorRefByType(editorType);
+    const savedRange = savedEditorSelectionRef.current;
+    const selection = window.getSelection();
+
+    if (!editorElement || !selection) {
+      return false;
+    }
+
+    editorElement.focus();
+
+    if (!savedRange) {
+      return false;
+    }
+
+    try {
+      selection.removeAllRanges();
+      selection.addRange(savedRange);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const execCommand = (command, value = null, editorType = 'origin') => {
     getEditorRefByType(editorType)?.focus();
     document.execCommand(command, false, value);
     updateHtmlContent(editorType);
   };
 
-  const insertImage = (editorType = 'origin') => {
-    const imageUrl = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60";
+  const insertImageHtml = (imageUrl, editorType = 'origin') => {
     const imgHtml = `<img src="${imageUrl}" style="max-width:100%; border-radius:8px; margin: 8px 0; display:block;" />`;
-    getEditorRefByType(editorType)?.focus();
+
+    restoreEditorSelection(editorType);
     document.execCommand('insertHTML', false, imgHtml);
     updateHtmlContent(editorType);
+  };
+
+  const openImagePicker = (editorType = 'origin') => {
+    saveEditorSelection(editorType);
+    pendingImageEditorTypeRef.current = editorType;
+
+    if (imageFileInputRef.current) {
+      imageFileInputRef.current.value = '';
+      imageFileInputRef.current.click();
+    }
+  };
+
+  const handleImageFileChange = (event) => {
+    const file = event.target.files?.[0];
+    const editorType = pendingImageEditorTypeRef.current || 'origin';
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      showToast('请选择图片文件');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        insertImageHtml(reader.result, editorType);
+      } else {
+        showToast('图片插入失败，请重试');
+      }
+
+      pendingImageEditorTypeRef.current = 'origin';
+      savedEditorSelectionRef.current = null;
+      event.target.value = '';
+    };
+
+    reader.onerror = () => {
+      showToast('图片读取失败，请重试');
+      pendingImageEditorTypeRef.current = 'origin';
+      savedEditorSelectionRef.current = null;
+      event.target.value = '';
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const updateHtmlContent = (editorType = 'origin') => {
@@ -1366,7 +1460,7 @@ const App = () => {
             <button
               type="button"
               onMouseDown={keepEditorSelection}
-              onClick={() => insertImage(activeRichTextEditorType)}
+              onClick={() => openImagePicker(activeRichTextEditorType)}
               className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
               aria-label="插图"
             >
@@ -1669,6 +1763,13 @@ const App = () => {
   return (
     <div className="flex min-h-screen w-full justify-center bg-gray-100 font-sans">
       <div className="relative flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-white text-[#1F2329] shadow-2xl">
+        <input
+          ref={imageFileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageFileChange}
+        />
         <input
           ref={videoFileInputRef}
           type="file"
