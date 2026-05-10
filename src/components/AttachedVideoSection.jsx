@@ -1,5 +1,5 @@
-import React from 'react';
-import { PlayCircle, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MoreVertical, PlayCircle, Plus } from 'lucide-react';
 
 const truncateMiddle = (value = '', maxLength = 24) => {
   const chars = Array.from(value);
@@ -16,39 +16,100 @@ const truncateMiddle = (value = '', maxLength = 24) => {
   return `${chars.slice(0, headCount).join('')}${ellipsis}${chars.slice(-tailCount).join('')}`;
 };
 
-function AttachedVideoSection({ items, onAdd, onRemove, maxCount = Infinity }) {
+function AttachedVideoSection({ items, onAdd, onRemove, onEdit, maxCount = Infinity }) {
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  useEffect(() => {
+    if (!openMenuId) return undefined;
+
+    const close = () => setOpenMenuId(null);
+    const timerId = window.setTimeout(() => {
+      document.addEventListener('click', close);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timerId);
+      document.removeEventListener('click', close);
+    };
+  }, [openMenuId]);
+
   return (
     <div className="rounded-[15px] border border-[#ECECF3] bg-white p-2 shadow-[0_10px_30px_rgba(17,24,39,0.04)]">
       <div className="space-y-4">
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-4">
-            <div className="relative h-[120px] w-[180px] shrink-0 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#5C6F8A_0%,#2F4A67_100%)]">
-              <button
-                type="button"
-                onClick={() => onRemove(item.id)}
-                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#FF5E5E] shadow-[0_6px_16px_rgba(17,24,39,0.14)] backdrop-blur-sm transition active:scale-95"
-                aria-label="删除视频"
-              >
-                <Trash2 size={16} />
-              </button>
-              {item.cover && (
-                <img
-                  src={item.cover}
-                  alt={`${item.title}封面`}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
-              <div className="absolute inset-0 bg-black/20" />
+            {/* 封面缩略图区域 */}
+            <div className="relative h-[120px] w-[180px] shrink-0 rounded-2xl bg-[linear-gradient(135deg,#5C6F8A_0%,#2F4A67_100%)]">
+              {/* 图片和遮罩单独套 overflow-hidden，防止裁切弹出菜单 */}
+              <div className="absolute inset-0 overflow-hidden rounded-2xl">
+                {item.cover && (
+                  <img
+                    src={item.cover}
+                    alt={`${item.title}封面`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/20" />
+              </div>
+
+              {/* 播放图标 */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
                   <PlayCircle size={32} strokeWidth={1.8} />
                 </div>
               </div>
+
+              {/* 时长角标 */}
               <div className="absolute bottom-2 left-2 rounded-[10px] bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
                 {item.duration || '12:45'}
               </div>
+
+              {/* 竖向三点菜单（在 overflow-hidden 外层，不会被裁切） */}
+              <div
+                className="absolute right-[1px] top-[1px] z-20"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                  className="flex h-8 w-8 items-center justify-center text-white transition active:scale-95"
+                  aria-label="更多操作"
+                >
+                  <MoreVertical size={22} />
+                </button>
+
+                {openMenuId === item.id && (
+                  <div
+                    className="absolute right-0 top-10 w-[96px] overflow-hidden rounded-[12px] border border-[#F0F0F5] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.15)]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        onEdit?.(item);
+                      }}
+                      className="flex w-full items-center px-4 py-[10px] text-[13px] font-medium text-[#374151] active:bg-[#F5F6F8]"
+                    >
+                      编辑
+                    </button>
+                    <div className="mx-3 h-px bg-[#F0F0F5]" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        onRemove(item.id);
+                      }}
+                      className="flex w-full items-center px-4 py-[10px] text-[13px] font-medium text-[#FF5E5E] active:bg-[#FFF5F5]"
+                    >
+                      删除
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* 视频信息 */}
             <div className="min-w-0 flex-1 self-stretch py-2">
               <div
                 className="truncate text-[14px] font-bold leading-6 text-[#111827]"

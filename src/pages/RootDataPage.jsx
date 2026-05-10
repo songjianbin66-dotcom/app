@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
   Search,
   X,
+  RefreshCw,
 } from 'lucide-react';
 import './player.css';
 import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
@@ -271,6 +272,10 @@ const App = () => {
   const visualViewportBaselineRef = useRef(0);
   const savedEditorSelectionRef = useRef(null);
   const pendingImageEditorTypeRef = useRef('origin');
+  const editingOriginalSrcRef = useRef(null);
+  const videoPickerActionRef = useRef('new'); // 'new' | 'replace'
+  const pendingReplaceOldSrcRef = useRef(null);
+  const isVideoEditModeRef = useRef(false);
 
   const okStyles = [
     {
@@ -625,27 +630,70 @@ const App = () => {
     }
   };
 
+  const openVideoEditor = (target, existingVideo) => {
+    editingOriginalSrcRef.current = existingVideo.src || null;
+    isVideoEditModeRef.current = true;
+    setVideoEditorDraft({ ...existingVideo });
+    setVideoTagInput('');
+    setPendingVideoTarget(target);
+    setView('video-upload');
+  };
+
+  const handleReplaceVideoClick = () => {
+    pendingReplaceOldSrcRef.current = videoEditorDraft?.src || null;
+    videoPickerActionRef.current = 'replace';
+
+    if (videoFileInputRef.current) {
+      videoFileInputRef.current.value = '';
+      videoFileInputRef.current.click();
+    }
+  };
+
   const handleVideoFileChange = async (event) => {
     const file = event.target.files?.[0];
 
     if (!file || !pendingVideoTarget) {
+      videoPickerActionRef.current = 'new';
+      pendingReplaceOldSrcRef.current = null;
       return;
     }
 
     const nextDraft = await createVideoDraftFromFile(file);
-    setVideoEditorDraft(nextDraft);
-    setVideoTagInput('');
-    setView('video-upload');
+
+    if (videoPickerActionRef.current === 'replace') {
+      // 如果在本次编辑中已替换过一次，需释放上一个临时 src
+      const oldSrc = pendingReplaceOldSrcRef.current;
+      if (oldSrc && oldSrc !== editingOriginalSrcRef.current) {
+        releaseObjectUrl(oldSrc);
+      }
+      pendingReplaceOldSrcRef.current = null;
+      videoPickerActionRef.current = 'new';
+      // 保留已有标签，其余元数据用新文件覆盖
+      setVideoEditorDraft((prev) => ({
+        ...nextDraft,
+        tags: prev?.tags ?? nextDraft.tags,
+      }));
+    } else {
+      setVideoEditorDraft(nextDraft);
+      setVideoTagInput('');
+      setView('video-upload');
+    }
+
     event.target.value = '';
   };
 
   const closeVideoUploadPage = () => {
     uploadPreviewVideoRef.current?.pause();
 
-    if (videoEditorDraft?.src) {
+    // 编辑模式下，若未更换视频，draft.src 与原始 src 相同，不能释放（原视频仍在使用）
+    if (videoEditorDraft?.src && videoEditorDraft.src !== editingOriginalSrcRef.current) {
       releaseObjectUrl(videoEditorDraft.src);
     }
 
+    editingOriginalSrcRef.current = null;
+    isVideoEditModeRef.current = false;
+    videoPickerActionRef.current = 'new';
+    pendingReplaceOldSrcRef.current = null;
     setVideoEditorDraft(null);
     setVideoTagInput('');
     setPendingVideoTarget(null);
@@ -692,10 +740,10 @@ const App = () => {
     }
   };
 
-  const assignVideoToTarget = (target, video) => {
+  const assignVideoToTarget = (target, video, { disposeOld = true } = {}) => {
     if (target.type === 'mindmap') {
       setMindmapVideos((prev) => {
-        prev.forEach(disposeVideoAsset);
+        if (disposeOld) prev.forEach(disposeVideoAsset);
         return [video];
       });
       return;
@@ -703,7 +751,7 @@ const App = () => {
 
     if (target.type === 'origin') {
       setOriginContent((prev) => {
-        prev.videos.forEach(disposeVideoAsset);
+        if (disposeOld) prev.videos.forEach(disposeVideoAsset);
         return {
           ...prev,
           videos: [video],
@@ -714,7 +762,7 @@ const App = () => {
 
     const targetLectureId = target.lectureId ?? activeLectureItem.id;
     updateLectureItem(targetLectureId, (item) => {
-      item.videos.forEach(disposeVideoAsset);
+      if (disposeOld) item.videos.forEach(disposeVideoAsset);
 
       return {
         ...item,
@@ -731,14 +779,25 @@ const App = () => {
     uploadPreviewVideoRef.current?.pause();
     setIsSavingVideo(true);
     await new Promise((resolve) => window.setTimeout(resolve, 900));
-    assignVideoToTarget(pendingVideoTarget, videoEditorDraft);
+
+    // 编辑模式且未更换视频时，src 相同，不能 dispose 旧视频的 URL（即将继续使用）
+    const isEditSameSrc =
+      editingOriginalSrcRef.current !== null &&
+      videoEditorDraft.src === editingOriginalSrcRef.current;
+
+    assignVideoToTarget(pendingVideoTarget, videoEditorDraft, { disposeOld: !isEditSameSrc });
+
+    editingOriginalSrcRef.current = null;
+    isVideoEditModeRef.current = false;
+    videoPickerActionRef.current = 'new';
+    pendingReplaceOldSrcRef.current = null;
     setVideoEditorDraft(null);
     setVideoTagInput('');
     setPendingVideoTarget(null);
     setIsSavingVideo(false);
     setIsUploadPreviewPlaying(false);
     setView('create');
-    showToast('视频上传完成');
+    showToast('视频保存成功');
   };
 
   const toggleUploadPreviewPlayback = async () => {
@@ -1159,7 +1218,9 @@ const App = () => {
         >
           <ChevronLeft size={24} strokeWidth={2.3} />
         </button>
-        <div className="text-[17px] font-bold text-[#111827]">设置标签</div>
+        <div className="text-[17px] font-bold text-[#111827]">
+          {isVideoEditModeRef.current ? '视频编辑' : '设置标签'}
+        </div>
         <div
           onClick={() => {
             if (!videoEditorDraft || isSavingVideo) return;
@@ -1220,6 +1281,18 @@ const App = () => {
               )}
               {isUploadPreviewPlaying && (
                 <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/30 to-transparent" />
+              )}
+
+              {/* 更换视频：仅编辑模式显示 */}
+              {isVideoEditModeRef.current && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleReplaceVideoClick(); }}
+                  className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm active:bg-black/60"
+                >
+                  <RefreshCw size={11} strokeWidth={2.3} />
+                  更换视频
+                </button>
               )}
             </button>
           </div>
@@ -1289,7 +1362,7 @@ const App = () => {
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          {/* <span className="font-medium text-[17px]">创建根数据</span> */}
+          <span className="font-medium text-[17px]">创作</span>
         </div>
         <div className="flex items-center gap-2">
           {showSharedDraftButton && (
@@ -1359,6 +1432,7 @@ const App = () => {
               items={mindmapVideos}
               maxCount={1}
               onAdd={() => openVideoPicker({ type: 'mindmap' })}
+              onEdit={(video) => openVideoEditor({ type: 'mindmap' }, video)}
               onRemove={(id) => setMindmapVideos((prev) => {
                 const nextVideos = prev.filter((video) => {
                   if (video.id === id) {
@@ -1398,6 +1472,7 @@ const App = () => {
                 items={originContent.videos}
                 maxCount={1}
                 onAdd={() => openVideoPicker({ type: 'origin' })}
+                onEdit={(video) => openVideoEditor({ type: 'origin' }, video)}
                 onRemove={(id) =>
                   setOriginContent((prev) => ({
                     ...prev,
@@ -1441,6 +1516,7 @@ const App = () => {
                 items={activeLectureItem.videos}
                 maxCount={1}
                 onAdd={() => openVideoPicker({ type: 'lecture', lectureId: activeLectureItem.id })}
+                onEdit={(video) => openVideoEditor({ type: 'lecture', lectureId: activeLectureItem.id }, video)}
                 onRemove={(id) =>
                   updateLectureItem(activeLectureItem.id, (item) => ({
                     ...item,
@@ -1712,7 +1788,7 @@ const App = () => {
 
   const renderSubmitReviewPage = () => (
     <div className="flex h-full flex-col bg-white">
-      <div className="flex h-[58px] shrink-0 items-center border-b border-[#EEF0F4] bg-white px-4">
+      <div className="relative flex h-[58px] shrink-0 items-center border-b border-[#EEF0F4] bg-white px-4">
         <button
           type="button"
           onClick={() => setView('create')}
@@ -1721,11 +1797,11 @@ const App = () => {
         >
           <ChevronLeft size={24} strokeWidth={2.3} />
         </button>
-        <div className="ml-1 text-[17px] font-bold text-[#111827]">选择根数据类型</div>
+        <div className="pointer-events-none absolute inset-x-0 text-center text-[17px] font-bold text-[#111827]">提交审核</div>
       </div>
 
       <div className="flex-1 px-4 pt-3 pb-4">
-        {/* <div className="text-[15px] font-medium leading-6 text-[#6B7280]">请选择根数据类型：</div> */}
+        <div className="text-[15px] font-medium leading-6 ">请选择根数据类型：</div>
         <div className="mt-3 space-y-3">
             {ROOT_DATA_TYPE_OPTIONS.map((option) => {
               const isSelected = selectedRootDataType === option;
