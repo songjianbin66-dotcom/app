@@ -607,6 +607,9 @@ const App = () => {
     showToast('原文草稿已保存');
   };
 
+  const showSharedDraftButton = activeTab === 'mindmap' || activeTab === 'text';
+  const handleSharedDraftSave = activeTab === 'mindmap' ? handleMindmapComplete : handleOriginSaveDraft;
+
   const addStepAt = (idx) => {
     const newSteps = [...mindmapData.steps];
     newSteps.splice(idx + 1, 0, '');
@@ -1148,6 +1151,12 @@ const App = () => {
       return renderLectureEditPage();
     }
 
+    const createTabs = [
+      { id: 'mindmap', label: '脑图', icon: <Share2 size={18} /> },
+      { id: 'text', label: '原文', icon: <FileText size={18} /> },
+      { id: 'video', label: '讲解', icon: <Video size={18} /> },
+    ];
+
     return (
     <div className="flex flex-col h-full bg-white relative">
       {/* 顶部导航 */}
@@ -1163,53 +1172,38 @@ const App = () => {
           </button>
           <span className="font-medium text-[17px]">创建根数据</span>
         </div>
-        <div 
-          onClick={handleSubmit}
-          className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
-        >
-          提交审核
+        <div className="flex items-center gap-2">
+          {showSharedDraftButton && (
+            <div
+              onClick={handleSharedDraftSave}
+              className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
+            >
+              保存
+            </div>
+          )}
+          <div 
+            onClick={handleSubmit}
+            className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
+          >
+            提交审核
+          </div>
         </div>
       </div>
 
-      {/* Tab 切换 */}
-      <div className="flex h-11 bg-white shrink-0">
-        {[
-          { id: 'mindmap', label: '脑图', icon: <Share2 size={18} /> },
-          { id: 'text', label: '原文', icon: <FileText size={18} /> },
-          { id: 'video', label: '讲解', icon: <Video size={18} /> },
-        ].map(tab => {
-          return (
-            <button
-              key={tab.id}
-              onClick={() => handleTabClick(tab.id)}
-              className={`flex-1 h-11 flex items-center justify-center relative transition-all ${
-                activeTab === tab.id ? 'text-[#C8161D]' : 'text-gray-500'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                {React.cloneElement(tab.icon, { size: 17 })}
-                <span className={`text-[14px] transition-colors ${activeTab === tab.id ? 'font-bold' : 'font-medium'}`}>{tab.label}</span>
-              </div>
-              {activeTab === tab.id && (
-                <div className="absolute bottom-[2px] h-[4px] w-[72px] rounded-full bg-[#C8161D]" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
       {/* 主内容区 */}
-      <div className="flex-1 overflow-y-auto no-scrollbar p-4">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-32 pt-4">
         {activeTab === 'mindmap' && (
           <div className="flex min-h-full flex-col gap-4">
-            <TabTitleInput
-              value={tabTitles.mindmap}
-              onChange={(e) => updateTabTitle('mindmap', e.target.value)}
-              placeholder="请输入脑图标题"
-              inputClassName="text-[18px] font-bold leading-[1.6] placeholder:text-[18px] placeholder:font-medium"
-              counterClassName="text-[14px]"
-            />
-            <div className="bg-white rounded-xl p-6 border border-gray-100 text-[16px] leading-8 text-gray-800">
+            <div>
+              <input
+                type="text"
+                placeholder="请输入脑图标题"
+                className="min-w-0 flex-1 border-none bg-transparent text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
+                value={tabTitles.mindmap}
+                onChange={(e) => updateTabTitle('mindmap', e.target.value)}
+              />
+            </div>
+            <div className="px-1 py-2 text-[16px] leading-8 text-gray-800">
               做 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.action) }} value={mindmapData.action} onChange={(e) => updateMindmapField('action', e.target.value)} /> 事，关键在于 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.keyPoint) }} value={mindmapData.keyPoint} onChange={(e) => updateMindmapField('keyPoint', e.target.value)} />。<br />
               要针对 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.target) }} value={mindmapData.target} onChange={(e) => updateMindmapField('target', e.target.value)} />，鉴于 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.situation) }} value={mindmapData.situation} onChange={(e) => updateMindmapField('situation', e.target.value)} /> 的形势，发挥 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.advantage) }} value={mindmapData.advantage} onChange={(e) => updateMindmapField('advantage', e.target.value)} /> 的优势，本着 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.principle) }} value={mindmapData.principle} onChange={(e) => updateMindmapField('principle', e.target.value)} /> 的原则，运用 <input className="inline-input" style={{ width: getInlineInputWidth(mindmapData.method) }} value={mindmapData.method} onChange={(e) => updateMindmapField('method', e.target.value)} /> 的方法，通过如下步骤：
               
@@ -1260,26 +1254,20 @@ const App = () => {
                 return nextVideos;
               })}
             />
-
-            <div className="mt-auto pt-2">
-              <button
-                type="button"
-                onClick={handleMindmapComplete}
-                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white"
-              >
-                保存草稿
-              </button>
-            </div>
           </div>
         )}
 
         {activeTab === 'text' && (
           <div className="space-y-4">
-            <TabTitleInput
-              value={tabTitles.text}
-              onChange={(e) => updateTabTitle('text', e.target.value)}
-              placeholder="请输入原文标题"
-            />
+            <div>
+              <input
+                type="text"
+                placeholder="请输入原文标题"
+                className="min-w-0 w-full border-none bg-transparent text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
+                value={tabTitles.text}
+                onChange={(e) => updateTabTitle('text', e.target.value)}
+              />
+            </div>
             <div className="bg-white rounded-xl flex flex-col border border-gray-100 overflow-hidden min-h-[400px] relative">
               <div className="p-2 bg-gray-50 border-b border-gray-100 flex items-center space-x-3 overflow-x-auto no-scrollbar shrink-0">
                 <div className="flex space-x-3 pr-2 border-r border-gray-200">
@@ -1316,15 +1304,6 @@ const App = () => {
                 }))
               }
             />
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleOriginSaveDraft}
-                className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white"
-              >
-                保存草稿
-              </button>
-            </div>
           </div>
         )}
 
@@ -1475,6 +1454,35 @@ const App = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <div
+        className="pointer-events-none absolute inset-x-4 z-20"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+      >
+        <div className="pointer-events-auto flex gap-3">
+          {createTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabClick(tab.id)}
+                className={`flex h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[12px] border px-3 transition-all active:scale-[0.98] ${
+                  isActive
+                    ? 'border-[#C8161D] bg-[#C8161D] text-white'
+                    : 'border-[#E5E7EB] bg-white text-[#3F3F46]'
+                }`}
+              >
+                {React.cloneElement(tab.icon, { size: 16, strokeWidth: isActive ? 2.25 : 2 })}
+                <span className={`truncate text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <style>{`
