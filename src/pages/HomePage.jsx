@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import ProfilePage from './ProfilePage';
 import { 
   Menu, 
   Cloud, 
@@ -549,13 +550,8 @@ const App = () => {
         )}
 
         {!isHomeTab && !isSmartTab && (
-          <main className="flex-1 bg-[#F5F6F8] px-6 py-10">
-            <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
-              <div className="text-[18px] font-bold text-[#1F2329]">我的</div>
-              <p className="mt-3 text-[13px] leading-6 text-[#8F959E]">
-                这里暂时保留为空白页，首页与数智页签都可正常切换。
-              </p>
-            </div>
+          <main className="flex-1 overflow-y-auto no-scrollbar bg-[#F5F6F7]">
+            <ProfilePage />
           </main>
         )}
 
