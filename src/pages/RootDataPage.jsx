@@ -11,6 +11,7 @@ import {
   Video, 
   Share2, 
   PlayCircle,
+  Play,
   UploadCloud,
   Bold,
   Italic,
@@ -40,6 +41,8 @@ const DEFAULT_VIDEO_COVERS = [
   'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
 ];
 const MINDMAP_FIELD_MAX_CHARS = 10;
+const VIDEO_TAG_MAX_COUNT = 5;
+const DEFAULT_VIDEO_TAGS = ['战略', '认知', '增长'];
 
 const getCharacterCount = (value = '') => Array.from(value).length;
 const limitMindmapText = (value = '') =>
@@ -47,6 +50,36 @@ const limitMindmapText = (value = '') =>
 const getInlineInputWidth = (value = '') => `${Math.max(getCharacterCount(value) + 1, 4)}em`;
 
 const getDefaultVideoCover = (seed = 0) => DEFAULT_VIDEO_COVERS[Math.abs(seed) % DEFAULT_VIDEO_COVERS.length];
+const stripFileExtension = (value = '') => value.replace(/\.[^.]+$/, '');
+const formatFileSize = (bytes = 0) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0MB';
+  }
+
+  const sizeInMb = bytes / (1024 * 1024);
+
+  if (sizeInMb >= 1024) {
+    return `${(sizeInMb / 1024).toFixed(2)}GB`;
+  }
+
+  return `${sizeInMb.toFixed(1)}MB`;
+};
+const formatDuration = (seconds = 0) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '00:00';
+  }
+
+  const totalSeconds = Math.round(seconds);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainSeconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return [hours, minutes, remainSeconds].map((part) => part.toString().padStart(2, '0')).join(':');
+  }
+
+  return [minutes, remainSeconds].map((part) => part.toString().padStart(2, '0')).join(':');
+};
 
 const createDefaultLectureVideo = (seed = 0) => ({
   id: Date.now() + seed,
@@ -55,6 +88,7 @@ const createDefaultLectureVideo = (seed = 0) => ({
   duration: '04:32',
   size: '128.5MB',
   cover: getDefaultVideoCover(seed),
+  tags: [...DEFAULT_VIDEO_TAGS],
 });
 
 const createLectureEpisode = (index, overrides = {}) => ({
@@ -76,13 +110,13 @@ const getPlainText = (html = '') =>
 const initialLectureEpisodes = [
   createLectureEpisode(0, {
     title: '什么是函数',
-    video: { id: 201, title: '函数概念介绍.mp4', source: 'quick-add', duration: '04:32', size: '128.5MB', cover: getDefaultVideoCover(0) },
+    video: { id: 201, title: '函数概念介绍.mp4', source: 'quick-add', duration: '04:32', size: '128.5MB', cover: getDefaultVideoCover(0), tags: ['基础认知', '函数'] },
     html: '<p>函数（Function）是一段可以被重复调用的代码块，用于完成特定的任务。</p><p>通过将代码封装成函数，我们可以提高代码的复用性、可读性和可维护性。</p>',
     updatedAt: '今天 14:22 更新',
   }),
   createLectureEpisode(1, {
     title: '函数的定义与调用',
-    video: { id: 202, title: '函数定义与调用.mp4', source: 'quick-add', duration: '05:18', size: '156.2MB', cover: getDefaultVideoCover(1) },
+    video: { id: 202, title: '函数定义与调用.mp4', source: 'quick-add', duration: '05:18', size: '156.2MB', cover: getDefaultVideoCover(1), tags: ['定义', '调用'] },
     html: '<p>定义函数时需要声明函数名、参数和函数体。调用函数时，程序会进入函数体执行其中的逻辑。</p>',
     updatedAt: '今天 15:03 更新',
   }),
@@ -116,21 +150,27 @@ const TabTitleInput = ({
 
 const App = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState('create'); // 'create', 'browse', 'library'
+  const [view, setView] = useState('create'); // 'create', 'browse', 'library', 'video-upload'
   const [activeTab, setActiveTab] = useState('mindmap');
   const [isLectureEditorOpen, setIsLectureEditorOpen] = useState(false);
   const [openLectureMenuId, setOpenLectureMenuId] = useState(null);
-  const [rootTags, setRootTags] = useState(['战略', '认知', '增长']);
-  const [rootTagInput, setRootTagInput] = useState('');
   const [tabTitles, setTabTitles] = useState({
     mindmap: '',
     text: '',
     video: '',
   });
   const [toastMessage, setToastMessage] = useState('');
-  
+  const [videoEditorDraft, setVideoEditorDraft] = useState(null);
+  const [videoTagInput, setVideoTagInput] = useState('');
+  const [pendingVideoTarget, setPendingVideoTarget] = useState(null);
+  const [isSavingVideo, setIsSavingVideo] = useState(false);
+  const [isUploadPreviewPlaying, setIsUploadPreviewPlaying] = useState(false);
+
   const [okStyleIndex, setOkStyleIndex] = useState(0);
   const editorRef = useRef(null);
+  const videoFileInputRef = useRef(null);
+  const uploadPreviewVideoRef = useRef(null);
+  const createdObjectUrlsRef = useRef(new Set());
 
   const okStyles = [
     {
@@ -255,6 +295,11 @@ const App = () => {
     return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
+  useEffect(() => () => {
+    createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    createdObjectUrlsRef.current.clear();
+  }, []);
+
   const handleTabClick = (tab) => {
     setActiveTab(tab);
     setIsLectureEditorOpen(false);
@@ -265,36 +310,231 @@ const App = () => {
     setToastMessage(message);
   };
 
-  const addRootTag = () => {
-    const nextTag = rootTagInput.trim();
+  const trackObjectUrl = (url) => {
+    if (url) {
+      createdObjectUrlsRef.current.add(url);
+    }
+  };
 
-    if (!nextTag) {
+  const releaseObjectUrl = (url) => {
+    if (url && createdObjectUrlsRef.current.has(url)) {
+      URL.revokeObjectURL(url);
+      createdObjectUrlsRef.current.delete(url);
+    }
+  };
+
+  const createVideoDraftFromFile = (file) => new Promise((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    trackObjectUrl(objectUrl);
+
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.src = objectUrl;
+    video.muted = true;
+    video.playsInline = true;
+    let isResolved = false;
+
+    const finalize = (cover = '') => {
+      if (isResolved) {
+        return;
+      }
+
+      isResolved = true;
+      resolve({
+        id: Date.now(),
+        title: stripFileExtension(file.name),
+        fileName: file.name,
+        source: 'upload',
+        size: formatFileSize(file.size),
+        duration: formatDuration(video.duration),
+        cover,
+        src: objectUrl,
+        tags: [...DEFAULT_VIDEO_TAGS],
+      });
+    };
+
+    const captureCurrentFrame = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 180;
+        const context = canvas.getContext('2d');
+        context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        finalize(canvas.toDataURL('image/jpeg', 0.82));
+      } catch (error) {
+        finalize();
+      }
+    };
+
+    video.addEventListener('loadedmetadata', () => {
+      if (video.readyState >= 2) {
+        const firstFrameTime = video.duration > 0.05 ? 0.05 : 0;
+        video.currentTime = firstFrameTime;
+      }
+    }, { once: true });
+
+    video.addEventListener('seeked', captureCurrentFrame, { once: true });
+    video.addEventListener('loadeddata', () => {
+      if (video.currentTime === 0) {
+        captureCurrentFrame();
+      }
+    }, { once: true });
+
+    video.addEventListener('error', () => finalize(), { once: true });
+  });
+
+  const disposeVideoAsset = (video) => {
+    if (video?.source === 'upload') {
+      releaseObjectUrl(video.src);
+    }
+  };
+
+  const openVideoPicker = (target) => {
+    setPendingVideoTarget(target);
+
+    if (videoFileInputRef.current) {
+      videoFileInputRef.current.value = '';
+      videoFileInputRef.current.click();
+    }
+  };
+
+  const handleVideoFileChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !pendingVideoTarget) {
       return;
     }
 
-    if (rootTags.includes(nextTag)) {
+    const nextDraft = await createVideoDraftFromFile(file);
+    setVideoEditorDraft(nextDraft);
+    setVideoTagInput('');
+    setView('video-upload');
+    event.target.value = '';
+  };
+
+  const closeVideoUploadPage = () => {
+    uploadPreviewVideoRef.current?.pause();
+
+    if (videoEditorDraft?.src) {
+      releaseObjectUrl(videoEditorDraft.src);
+    }
+
+    setVideoEditorDraft(null);
+    setVideoTagInput('');
+    setPendingVideoTarget(null);
+    setIsSavingVideo(false);
+    setIsUploadPreviewPlaying(false);
+    setView('create');
+  };
+
+  const addVideoTag = () => {
+    const nextTag = videoTagInput.trim();
+
+    if (!nextTag || !videoEditorDraft) {
+      return;
+    }
+
+    if (videoEditorDraft.tags.includes(nextTag)) {
       showToast('该标签已存在');
       return;
     }
 
-    if (rootTags.length >= 5) {
-      showToast('最多添加 5 个标签');
+    if (videoEditorDraft.tags.length >= VIDEO_TAG_MAX_COUNT) {
+      showToast(`最多添加 ${VIDEO_TAG_MAX_COUNT} 个标签`);
       return;
     }
 
-    setRootTags((prev) => [...prev, nextTag]);
-    setRootTagInput('');
+    setVideoEditorDraft((prev) => ({
+      ...prev,
+      tags: [...prev.tags, nextTag],
+    }));
+    setVideoTagInput('');
   };
 
-  const removeRootTag = (tagToRemove) => {
-    setRootTags((prev) => prev.filter((tag) => tag !== tagToRemove));
+  const removeVideoTag = (tagToRemove) => {
+    setVideoEditorDraft((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+    }));
   };
 
-  const handleRootTagKeyDown = (event) => {
+  const handleVideoTagKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      addRootTag();
+      addVideoTag();
     }
+  };
+
+  const assignVideoToTarget = (target, video) => {
+    if (target.type === 'mindmap') {
+      setMindmapVideos((prev) => {
+        prev.forEach(disposeVideoAsset);
+        return [video];
+      });
+      return;
+    }
+
+    if (target.type === 'origin') {
+      setOriginContent((prev) => {
+        prev.videos.forEach(disposeVideoAsset);
+        return {
+          ...prev,
+          videos: [video],
+        };
+      });
+      return;
+    }
+
+    setLectureEpisodes((prev) => prev.map((episode) => {
+      if (episode.id !== target.episodeId) {
+        return episode;
+      }
+
+      disposeVideoAsset(episode.video);
+      return {
+        ...episode,
+        video,
+      };
+    }));
+  };
+
+  const saveVideoUpload = async () => {
+    if (!videoEditorDraft || !pendingVideoTarget) {
+      return;
+    }
+
+    uploadPreviewVideoRef.current?.pause();
+    setIsSavingVideo(true);
+    await new Promise((resolve) => window.setTimeout(resolve, 900));
+    assignVideoToTarget(pendingVideoTarget, videoEditorDraft);
+    setVideoEditorDraft(null);
+    setVideoTagInput('');
+    setPendingVideoTarget(null);
+    setIsSavingVideo(false);
+    setIsUploadPreviewPlaying(false);
+    setView('create');
+    showToast('视频上传完成');
+  };
+
+  const toggleUploadPreviewPlayback = async () => {
+    const videoElement = uploadPreviewVideoRef.current;
+
+    if (!videoElement) {
+      return;
+    }
+
+    if (videoElement.paused) {
+      try {
+        await videoElement.play();
+        setIsUploadPreviewPlaying(true);
+      } catch (error) {
+        setIsUploadPreviewPlaying(false);
+      }
+      return;
+    }
+
+    videoElement.pause();
+    setIsUploadPreviewPlaying(false);
   };
 
   const updateTabTitle = (tab, value) => {
@@ -427,53 +667,22 @@ const App = () => {
     const nextVideo = {
       id: Date.now(),
       cover: data.cover || getDefaultVideoCover(Date.now()),
+      tags: data.tags || [],
       ...data,
     };
 
-    if (target === 'mindmap') {
-      setMindmapVideos([nextVideo]);
-    } else if (target === 'origin') {
-      setOriginContent(prev => ({ ...prev, videos: [nextVideo] }));
-    } else {
-      setLectureEpisodes(prev => prev.map(episode =>
-        episode.id === activeLectureEpisodeId
-          ? { ...episode, video: nextVideo }
-          : episode
-      ));
-    }
-  };
-
-  const addQuickVideo = (target) => {
-    const count =
+    assignVideoToTarget(
       target === 'mindmap'
-        ? mindmapVideos.length
+        ? { type: 'mindmap' }
         : target === 'origin'
-          ? originContent.videos.length
-          : activeLectureEpisodeIndex + 1;
-
-    if (target === 'mindmap' && mindmapVideos.length >= 1) {
-      showToast('脑图仅支持添加 1 个视频');
-      return;
-    }
-
-    if (target === 'origin' && originContent.videos.length >= 1) {
-      showToast('原文仅支持添加 1 个视频');
-      return;
-    }
-
-    addVideoToTarget(target, {
-      title: target === 'lecture' ? `讲解视频_${count}` : `视频_${count + 1}`,
-      source: 'quick-add',
-      duration: target === 'lecture' ? '04:32' : '12:45',
-      size: '128.5MB',
-      cover: getDefaultVideoCover(count),
-    });
+          ? { type: 'origin' }
+          : { type: 'lecture', episodeId: activeLectureEpisodeId },
+      nextVideo
+    );
   };
 
   const addLectureEpisode = () => {
-    const nextEpisode = createLectureEpisode(lectureEpisodes.length, {
-      video: createDefaultLectureVideo(lectureEpisodes.length),
-    });
+    const nextEpisode = createLectureEpisode(lectureEpisodes.length);
     setLectureEpisodes(prev => [...prev, nextEpisode]);
     setActiveLectureEpisodeId(nextEpisode.id);
     setIsLectureEditorOpen(true);
@@ -483,8 +692,10 @@ const App = () => {
   const removeLectureEpisode = (id) => {
     if (lectureEpisodes.length === 1) return;
 
+    const removedEpisode = lectureEpisodes.find((episode) => episode.id === id);
     const removeIndex = lectureEpisodes.findIndex(episode => episode.id === id);
     const nextEpisodes = lectureEpisodes.filter(episode => episode.id !== id);
+    disposeVideoAsset(removedEpisode?.video);
     setLectureEpisodes(nextEpisodes);
 
     if (activeLectureEpisodeId === id) {
@@ -504,7 +715,10 @@ const App = () => {
   const removeActiveLectureVideo = () => {
     setLectureEpisodes(prev => prev.map(episode =>
       episode.id === activeLectureEpisodeId
-        ? { ...episode, video: null }
+        ? (() => {
+            disposeVideoAsset(episode.video);
+            return { ...episode, video: null };
+          })()
         : episode
     ));
   };
@@ -549,7 +763,7 @@ const App = () => {
     <div className="rounded-[15px] border border-[#ECECF3] bg-white p-2 shadow-[0_10px_30px_rgba(17,24,39,0.04)]">
       <div className="space-y-4">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-4">
+          <div key={item.id} className="flex items-start gap-4">
             <div className="relative h-[120px] w-[180px] shrink-0 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#5C6F8A_0%,#2F4A67_100%)]">
               {item.cover && (
                 <img
@@ -571,11 +785,23 @@ const App = () => {
 
             <div className="min-w-0 flex-1 self-stretch py-2">
               <div className="line-clamp-2 text-[14px] font-bold leading-6 text-[#111827]">
-                {item.title}
+                {item.fileName || item.title}
               </div>
               <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
                 {item.size || '128.5MB'}
               </div>
+              {item.tags?.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {item.tags.map((tag) => (
+                    <span
+                      key={`${item.id}-${tag}`}
+                      className="rounded-full bg-[#FCEAEC] px-2.5 py-1 text-[11px] font-semibold text-[#C8161D]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button
@@ -599,7 +825,7 @@ const App = () => {
               <Plus size={20} strokeWidth={2.8} />
             </div>
             <div className="text-[14px]  text-[#B11319]">
-              添加视频
+              上传视频
             </div>
             <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
               支持 MP4 / MOV / AVI 等格式，单个视频不超过 200MB
@@ -677,8 +903,20 @@ const App = () => {
                   <Video size={15} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-bold text-[#374151]">{activeLectureEpisode.video.title}</div>
+                  <div className="truncate text-[13px] font-bold text-[#374151]">{activeLectureEpisode.video.fileName || activeLectureEpisode.video.title}</div>
                   <div className="mt-0.5 text-[12px] text-gray-400">{activeLectureEpisode.video.size || '128.5MB'}</div>
+                  {activeLectureEpisode.video.tags?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {activeLectureEpisode.video.tags.map((tag) => (
+                        <span
+                          key={`${activeLectureEpisode.video.id}-${tag}`}
+                          className="rounded-full bg-[#FCEAEC] px-2.5 py-1 text-[11px] font-semibold text-[#C8161D]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div
                   onClick={removeActiveLectureVideo}
@@ -693,8 +931,8 @@ const App = () => {
               </div>
             ) : (
               <div
-                onClick={() => addQuickVideo('lecture')}
-                onKeyDown={(event) => handleDivActionKeyDown(event, () => addQuickVideo('lecture'))}
+                onClick={() => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId })}
+                onKeyDown={(event) => handleDivActionKeyDown(event, () => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId }))}
                 className="flex w-full items-center justify-center gap-2 bg-[#FAFAFC] px-4 py-4 text-[14px] font-bold text-[#C8161D]"
                 role="button"
                 tabIndex={0}
@@ -706,8 +944,8 @@ const App = () => {
           </div>
 
           <div
-            onClick={() => addQuickVideo('lecture')}
-            onKeyDown={(event) => handleDivActionKeyDown(event, () => addQuickVideo('lecture'))}
+            onClick={() => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId })}
+            onKeyDown={(event) => handleDivActionKeyDown(event, () => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId }))}
             className="mt-4 flex h-[58px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#F1B8BB] text-[#C8161D] active:bg-[#FFF3F4]"
             role="button"
             tabIndex={0}
@@ -768,6 +1006,127 @@ const App = () => {
     </div>
   );
 
+  const renderVideoUploadPage = () => (
+    <div className="flex h-full flex-col bg-white">
+      <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-[#EEF0F4] bg-white px-4">
+        <button
+          type="button"
+          onClick={closeVideoUploadPage}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[#374151] active:bg-gray-100"
+          aria-label="返回上一页"
+        >
+          <ChevronLeft size={24} strokeWidth={2.3} />
+        </button>
+        <div className="text-[17px] font-bold text-[#111827]">设置标签</div>
+        <div
+          onClick={() => {
+            if (!videoEditorDraft || isSavingVideo) return;
+            saveVideoUpload();
+          }}
+          className={`rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all ${
+            !videoEditorDraft || isSavingVideo ? 'cursor-not-allowed opacity-60' : ''
+          }`}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              if (!videoEditorDraft || isSavingVideo) return;
+              saveVideoUpload();
+            }
+          }}
+        >
+          {isSavingVideo ? '上传中' : '保存'}
+        </div>
+      </div>
+
+      {videoEditorDraft && (
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+          <div className="overflow-hidden rounded-[24px] bg-white">
+            <button
+              type="button"
+              onClick={toggleUploadPreviewPlayback}
+              className="relative block aspect-video w-full overflow-hidden bg-black"
+              aria-label={isUploadPreviewPlaying ? '暂停视频预览' : '播放视频预览'}
+            >
+              {!isUploadPreviewPlaying && videoEditorDraft.cover && (
+                <img
+                  src={videoEditorDraft.cover}
+                  alt="视频封面"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+              <video
+                ref={uploadPreviewVideoRef}
+                preload="metadata"
+                poster={videoEditorDraft.cover}
+                src={videoEditorDraft.src}
+                className={`h-full w-full object-cover ${isUploadPreviewPlaying ? 'opacity-100' : 'opacity-0'}`}
+                playsInline
+                controls={false}
+                onPlay={() => setIsUploadPreviewPlaying(true)}
+                onPause={() => setIsUploadPreviewPlaying(false)}
+                onEnded={() => setIsUploadPreviewPlaying(false)}
+              />
+              <div className="absolute inset-0 bg-black/18" />
+              {!isUploadPreviewPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-black/35 text-white">
+                    <Play size={28} fill="white" color="white" />
+                  </div>
+                </div>
+              )}
+              {isUploadPreviewPlaying && (
+                <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/30 to-transparent" />
+              )}
+            </button>
+          </div>
+
+          <div className="mt-5 bg-white">
+            <div className="mb-3  items-center gap-x-1.5 gap-y-1">
+              <div className="text-[13px] font-bold text-[#1F2329]">视频标签</div>
+              <div className="text-[11px] mt-[3px] font-medium leading-4 text-[#A0A7B4]">
+                用于分类和检索，最多添加 {VIDEO_TAG_MAX_COUNT} 个
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {videoEditorDraft.tags.map((tag) => (
+                <div
+                  key={tag}
+                  className="flex h-[25px] items-center gap-1 rounded-full bg-[#FCEAEC] px-2 text-[#C8161D]"
+                >
+                  <span className="text-[12px] font-semibold leading-none tracking-[0.01em]">{tag}</span>
+                  <button
+                    type="button"
+                    aria-label={`删除标签${tag}`}
+                    onClick={() => removeVideoTag(tag)}
+                    className="flex h-3 w-3 items-center justify-center rounded-full"
+                  >
+                    <X size={10} strokeWidth={2.25} />
+                  </button>
+                </div>
+              ))}
+
+              {videoEditorDraft.tags.length < VIDEO_TAG_MAX_COUNT && (
+                <div className="flex min-w-[120px] flex-1 items-center border-b-2 border-[#C8161D] pb-0.5">
+                  <input
+                    type="text"
+                    value={videoTagInput}
+                    onChange={(event) => setVideoTagInput(event.target.value.slice(0, 12))}
+                    onKeyDown={handleVideoTagKeyDown}
+                    placeholder="添加标签（回车创建）"
+                    className="w-full border-none bg-transparent text-[10px] leading-none text-[#1F2329] outline-none placeholder:text-[12px] placeholder:text-[#A0A7B4]"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const renderCreatePage = () => {
     if (activeTab === 'video' && isLectureEditorOpen && activeLectureEpisode) {
       return renderLectureEditPage();
@@ -793,48 +1152,6 @@ const App = () => {
           className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
         >
           提交审核
-        </div>
-      </div>
-
-      <div className="border-b border-[#EEF0F4] bg-white px-4 py-3 shrink-0">
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <div className="text-[13px] font-bold text-[#1F2329]">根数据标签:</div>
-                    {/* <AlertCircle size={14} className="text-[#A0A7B4]" /> */}
-
-          <div className="text-[11px] font-medium leading-4 text-[#A0A7B4]">
-            用于分类和检索，最多添加 5 个
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {rootTags.map((tag) => (
-            <div
-              key={tag}
-              className="flex h-[25px] items-center gap-1 rounded-full bg-[#FCEAEC] px-2 text-[#C8161D]"
-            >
-              <span className="text-[12px] font-semibold leading-none tracking-[0.01em]">{tag}</span>
-              <div
-                 aria-label={`删除标签${tag}`}
-                onClick={() => removeRootTag(tag)}
-                className="flex h-3 w-3 items-center justify-center rounded-full text-[#C8161D] "
-              >
-                <X size={10} strokeWidth={2.25} />
-              </div>
-            </div>
-          ))}
-
-          {rootTags.length < 5 && (
-            <div className="flex min-w-[120px] flex-1 items-center border-b-2 border-[#C8161D] pb-0.5">
-              <input
-                type="text"
-                value={rootTagInput}
-                onChange={(e) => setRootTagInput(e.target.value.slice(0, 12))}
-                onKeyDown={handleRootTagKeyDown}
-                placeholder="添加标签（回车创建）"
-                className="w-full border-none bg-transparent text-[10px] leading-none text-[#1F2329] outline-none placeholder:text-[#A0A7B4] placeholder:text-[12px]"
-              />
-            </div>
-          )}
         </div>
       </div>
 
@@ -914,8 +1231,18 @@ const App = () => {
             <AttachedVideoSection
               items={mindmapVideos}
               maxCount={1}
-              onAdd={() => addQuickVideo('mindmap')}
-              onRemove={(id) => setMindmapVideos((prev) => prev.filter((video) => video.id !== id))}
+              onAdd={() => openVideoPicker({ type: 'mindmap' })}
+              onRemove={(id) => setMindmapVideos((prev) => {
+                const nextVideos = prev.filter((video) => {
+                  if (video.id === id) {
+                    disposeVideoAsset(video);
+                    return false;
+                  }
+
+                  return true;
+                });
+                return nextVideos;
+              })}
             />
 
             <div className="mt-auto pt-2">
@@ -958,11 +1285,18 @@ const App = () => {
             <AttachedVideoSection
               items={originContent.videos}
               maxCount={1}
-              onAdd={() => addQuickVideo('origin')}
+              onAdd={() => openVideoPicker({ type: 'origin' })}
               onRemove={(id) =>
                 setOriginContent((prev) => ({
                   ...prev,
-                  videos: prev.videos.filter((video) => video.id !== id),
+                  videos: prev.videos.filter((video) => {
+                    if (video.id === id) {
+                      disposeVideoAsset(video);
+                      return false;
+                    }
+
+                    return true;
+                  }),
                 }))
               }
             />
@@ -1016,6 +1350,18 @@ const App = () => {
                         </span>
                         <div className="min-w-0 flex-1 pt-0.5 text-[11px] font-bold text-[#111827]">
                           {episode.title}
+                          {episode.video?.tags?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {episode.video.tags.map((tag) => (
+                                <span
+                                  key={`${episode.id}-${tag}`}
+                                  className="rounded-full bg-[#FCEAEC] px-2.5 py-1 text-[10px] font-semibold text-[#C8161D]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div
                           className="relative -mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#4B5563] active:bg-gray-100"
@@ -1179,7 +1525,20 @@ const App = () => {
   return (
     <div className="flex min-h-screen w-full justify-center bg-gray-100 font-sans">
       <div className="relative flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-white text-[#1F2329] shadow-2xl">
-        {view === 'create' ? renderCreatePage() : view === 'library' ? renderLibraryPage() : renderBrowsePage()}
+        <input
+          ref={videoFileInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={handleVideoFileChange}
+        />
+        {view === 'create'
+          ? renderCreatePage()
+          : view === 'library'
+            ? renderLibraryPage()
+            : view === 'video-upload'
+              ? renderVideoUploadPage()
+              : renderBrowsePage()}
         {toastMessage && (
           <div className="pointer-events-none absolute left-1/2 top-6 z-50 w-[calc(100%-32px)] -translate-x-1/2">
             <div className="rounded-2xl bg-[rgba(17,24,39,0.88)] px-4 py-3 text-center text-[13px] font-medium leading-5 text-white shadow-[0_12px_32px_rgba(17,24,39,0.22)] backdrop-blur-sm">
