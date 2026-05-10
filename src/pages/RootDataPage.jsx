@@ -25,9 +25,7 @@ import {
   Quote,
   Link,
   Undo2,
-  Redo2,
-  Maximize2,
-  RefreshCcw
+  Redo2
 } from 'lucide-react';
 import './player.css';
 import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
@@ -51,6 +49,20 @@ const getInlineInputWidth = (value = '') => `${Math.max(getCharacterCount(value)
 
 const getDefaultVideoCover = (seed = 0) => DEFAULT_VIDEO_COVERS[Math.abs(seed) % DEFAULT_VIDEO_COVERS.length];
 const stripFileExtension = (value = '') => value.replace(/\.[^.]+$/, '');
+const truncateMiddle = (value = '', maxLength = 24) => {
+  const chars = Array.from(value);
+
+  if (chars.length <= maxLength) {
+    return value;
+  }
+
+  const ellipsis = '...';
+  const availableChars = maxLength - ellipsis.length;
+  const headCount = Math.ceil(availableChars / 2);
+  const tailCount = Math.floor(availableChars / 2);
+
+  return `${chars.slice(0, headCount).join('')}${ellipsis}${chars.slice(-tailCount).join('')}`;
+};
 const formatFileSize = (bytes = 0) => {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return '0MB';
@@ -765,6 +777,14 @@ const App = () => {
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-4">
             <div className="relative h-[120px] w-[180px] shrink-0 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#5C6F8A_0%,#2F4A67_100%)]">
+              <button
+                type="button"
+                onClick={() => onRemove(item.id)}
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#FF5E5E] shadow-[0_6px_16px_rgba(17,24,39,0.14)] backdrop-blur-sm transition active:scale-95"
+                aria-label="删除视频"
+              >
+                <Trash2 size={16} />
+              </button>
               {item.cover && (
                 <img
                   src={item.cover}
@@ -778,20 +798,20 @@ const App = () => {
                   <PlayCircle size={32} strokeWidth={1.8} />
                 </div>
               </div>
-              <div className="absolute bottom-2 right-2 rounded-[10px] bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
+              <div className="absolute bottom-2 left-2 rounded-[10px] bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
                 {item.duration || '12:45'}
               </div>
             </div>
 
             <div className="min-w-0 flex-1 self-stretch py-2">
-              <div className="line-clamp-2 text-[14px] font-bold leading-6 text-[#111827]">
-                {item.fileName || item.title}
-              </div>
-              <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
-                {item.size || '128.5MB'}
+              <div
+                className="truncate text-[14px] font-bold leading-6 text-[#111827]"
+                title={item.fileName || item.title}
+              >
+                {truncateMiddle(item.fileName || item.title, 24)}
               </div>
               {item.tags?.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {item.tags.map((tag) => (
                     <span
                       key={`${item.id}-${tag}`}
@@ -803,15 +823,6 @@ const App = () => {
                 </div>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => onRemove(item.id)}
-              className="flex shrink-0 items-center gap-1 self-end pb-3 text-[13px] font-bold text-[#FF5E5E]"
-            >
-              <Trash2 size={16} />
-              删除
-            </button>
           </div>
         ))}
 
@@ -875,6 +886,17 @@ const App = () => {
           <div className="mb-3 text-[13px] font-bold text-[#4B5563]">视频</div>
           <div className="overflow-hidden rounded-xl bg-[#FFF3F4] shadow-[0_1px_0_rgba(17,24,39,0.04)]">
             <div className="relative aspect-video overflow-hidden bg-[#C8161D]">
+              {activeLectureEpisode.video && (
+                <button
+                  type="button"
+                  onClick={removeActiveLectureVideo}
+                  onKeyDown={(event) => handleDivActionKeyDown(event, removeActiveLectureVideo)}
+                  className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#FF5E5E] shadow-[0_6px_16px_rgba(17,24,39,0.14)] backdrop-blur-sm transition active:scale-95"
+                  aria-label="删除视频"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
               {activeLectureEpisode.video?.cover && (
                 <img
                   src={activeLectureEpisode.video.cover}
@@ -898,13 +920,17 @@ const App = () => {
             </div>
 
             {activeLectureEpisode.video ? (
-              <div className="flex items-center gap-3 bg-[#FAFAFC] px-4 py-3">
+              <div className="flex items-start gap-3 bg-[#FAFAFC] px-4 py-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C8161D] text-white">
                   <Video size={15} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-bold text-[#374151]">{activeLectureEpisode.video.fileName || activeLectureEpisode.video.title}</div>
-                  <div className="mt-0.5 text-[12px] text-gray-400">{activeLectureEpisode.video.size || '128.5MB'}</div>
+                  <div
+                    className="truncate text-[13px] font-bold text-[#374151]"
+                    title={activeLectureEpisode.video.fileName || activeLectureEpisode.video.title}
+                  >
+                    {truncateMiddle(activeLectureEpisode.video.fileName || activeLectureEpisode.video.title, 28)}
+                  </div>
                   {activeLectureEpisode.video.tags?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {activeLectureEpisode.video.tags.map((tag) => (
@@ -917,16 +943,6 @@ const App = () => {
                       ))}
                     </div>
                   )}
-                </div>
-                <div
-                  onClick={removeActiveLectureVideo}
-                  onKeyDown={(event) => handleDivActionKeyDown(event, removeActiveLectureVideo)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 active:bg-gray-100"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="删除视频"
-                >
-                  <X size={20} />
                 </div>
               </div>
             ) : (
@@ -1428,7 +1444,7 @@ const App = () => {
                                   <PlayCircle size={29} strokeWidth={1.8} />
                                 </div>
                               </div>
-                              <span className="absolute bottom-2 right-2 rounded-md bg-black/45 px-2 py-0.5 text-[12px] font-bold text-white">
+                              <span className="absolute bottom-2 left-2 rounded-md bg-black/45 px-2 py-0.5 text-[12px] font-bold text-white">
                                 {episode.video.duration || '00:00'}
                               </span>
                             </>
