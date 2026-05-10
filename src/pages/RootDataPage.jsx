@@ -2,33 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, 
-  MoreVertical, 
+  ChevronDown,
   Plus, 
   Minus,
-  Trash2, 
-  Pencil,
   FileText, 
   Video, 
   Share2, 
   PlayCircle,
   Play,
-  UploadCloud,
   Bold,
-  Italic,
   Underline,
   Image as ImageIcon,
   Search,
-  CheckCircle2,
-  AlertCircle,
   X,
-  List,
-  Quote,
-  Link,
-  Undo2,
-  Redo2
 } from 'lucide-react';
 import './player.css';
 import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
+import AttachedVideoSection from '../components/AttachedVideoSection.jsx';
+import ContentTabPanel from '../components/ContentTabPanel.jsx';
+import ContentPreviewPage from '../components/ContentPreviewPage.jsx';
 
 const THEME_COLOR = '#C8161D';
 
@@ -93,25 +85,6 @@ const formatDuration = (seconds = 0) => {
   return [minutes, remainSeconds].map((part) => part.toString().padStart(2, '0')).join(':');
 };
 
-const createDefaultLectureVideo = (seed = 0) => ({
-  id: Date.now() + seed,
-  title: `讲解视频_${seed + 1}`,
-  source: 'quick-add',
-  duration: '04:32',
-  size: '128.5MB',
-  cover: getDefaultVideoCover(seed),
-  tags: [...DEFAULT_VIDEO_TAGS],
-});
-
-const createLectureEpisode = (index, overrides = {}) => ({
-  id: Date.now() + index,
-  title: `第 ${index + 1} 集`,
-  video: null,
-  html: '',
-  updatedAt: '尚未编辑',
-  ...overrides,
-});
-
 const getPlainText = (html = '') =>
   html
     .replace(/<[^>]+>/g, ' ')
@@ -119,57 +92,78 @@ const getPlainText = (html = '') =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const initialLectureEpisodes = [
-  createLectureEpisode(0, {
-    title: '什么是函数',
-    video: { id: 201, title: '函数概念介绍.mp4', source: 'quick-add', duration: '04:32', size: '128.5MB', cover: getDefaultVideoCover(0), tags: ['基础认知', '函数'] },
-    html: '<p>函数（Function）是一段可以被重复调用的代码块，用于完成特定的任务。</p><p>通过将代码封装成函数，我们可以提高代码的复用性、可读性和可维护性。</p>',
-    updatedAt: '今天 14:22 更新',
-  }),
-  createLectureEpisode(1, {
-    title: '函数的定义与调用',
-    video: { id: 202, title: '函数定义与调用.mp4', source: 'quick-add', duration: '05:18', size: '156.2MB', cover: getDefaultVideoCover(1), tags: ['定义', '调用'] },
-    html: '<p>定义函数时需要声明函数名、参数和函数体。调用函数时，程序会进入函数体执行其中的逻辑。</p>',
-    updatedAt: '今天 15:03 更新',
-  }),
-  createLectureEpisode(2, {
-    title: '函数的参数与返回值',
-  }),
-];
+const createEmptyLectureItem = () => ({
+  id: `lecture-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  title: '',
+  html: '',
+  videos: [],
+  isSaved: false,
+});
 
-const TabTitleInput = ({
-  value,
-  onChange,
-  placeholder = '请输入标题',
-  inputClassName = '',
-  counterClassName = '',
-}) => (
-  <div className="rounded-[10px] border border-[#ECEEF3] bg-white px-3 py-2">
-    <div className="flex items-center gap-4">
-      <input
-        type="text"
-        placeholder={placeholder}
-        className={`min-w-0 flex-1 border-none bg-transparent text-[13px] text-[#1F2329] outline-none placeholder:text-[13px] placeholder:font-medium placeholder:text-[#C9CDD7] ${inputClassName}`}
-        value={value}
-        onChange={onChange}
-      />
-      <span className={`shrink-0 text-[13px] font-medium text-[#C9CDD7] ${counterClassName}`}>
-        {value.length}/20
-      </span>
-    </div>
-  </div>
-);
+const isLectureItemComplete = (item) =>
+  item.title.trim() !== '' &&
+  getPlainText(item.html) !== '' &&
+  item.videos.length > 0;
+
+const LECTURE_INDEX_CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+const getLectureItemLabel = (item, index) => item.title.trim() || `讲解 ${index + 1}`;
+const getLectureIndexLabel = (index) => LECTURE_INDEX_CN[index] ?? `${index + 1}`;
+const getLectureSheetTitle = (item, index) => {
+  const title = item.title.trim();
+
+  return title ? `讲解${getLectureIndexLabel(index)}: ${title}` : `讲解${getLectureIndexLabel(index)}`;
+};
+
+const PREVIEW_IMAGE_URL = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
+const FAKE_ORIGINAL_PREVIEW_HTML = `
+  <article>
+    <p><strong>根数据不是一段孤立内容，</strong>而是一套可以被团队反复调用的表达资产。它的价值不在于“写完”，而在于是否能被看懂、被复用、被执行。</p>
+    <p>当我们把一条方法论沉淀为原文时，需要先交代清楚背景，再把重点拆开讲透。只有这样，后续的讲解、分发和协作才会更顺畅。</p>
+    <img src="${PREVIEW_IMAGE_URL}" alt="原文预览示意图" style="width:100%; border-radius:18px; margin:18px 0; display:block;" />
+    <p>一条合格的原文，至少要同时满足三件事：<strong>观点清楚</strong>、<u>结构清楚</u>、动作清楚。观点决定读者为什么继续看，结构决定读者能不能快速理解，动作决定内容是否能真正进入业务场景。</p>
+    <p>所以在预览态里，我们更希望看到的是一份“像正式内容”的样子：有段落层次，有强调重点，也有足够直观的图片辅助，而不是一块没有节奏的大段文字。</p>
+  </article>
+`;
+
+const buildFakeLecturePreviewData = (count = 1) =>
+  Array.from({ length: Math.max(count, 1) }, (_, index) => {
+    const lectureNo = getLectureIndexLabel(index);
+
+    return {
+      content: {
+        id: `fake-lecture-${index + 1}`,
+        title: `讲解${lectureNo}：把根数据讲透`,
+        html: `
+          <article>
+            <p><strong>这是一段用于预览的演示讲解内容。</strong>我们在这里故意保留明显的版式层次，方便你确认讲解页在正式上线前的观感。</p>
+            <p>讲解页和原文页不一样，它更强调“说给人听”的节奏，所以段落通常会更短，重点句会更明确，关键动作也会被单独提出来。</p>
+            <img src="${DEFAULT_VIDEO_COVERS[index % DEFAULT_VIDEO_COVERS.length]}" alt="讲解预览示意图" style="width:100%; border-radius:18px; margin:18px 0; display:block;" />
+            <p>比如这里会把核心提醒直接标出来：<u>先让用户明白为什么重要，再告诉他下一步怎么做。</u>这样讲解才不会只停留在“解释”，而会自然过渡到“行动”。</p>
+            <p>最后再补一段总结：<strong>讲解的终点不是播放完成，而是让人愿意回到场景里继续执行。</strong>这类加粗和下划线，也能帮你快速确认当前预览样式是否符合预期。</p>
+          </article>
+        `,
+        content: '',
+      },
+      video: {
+        id: `fake-lecture-video-${index + 1}`,
+        title: `讲解${lectureNo}：预览示例`,
+        duration: index % 2 === 0 ? '03:28' : '04:12',
+      },
+    };
+  });
 
 const App = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState('create'); // 'create', 'browse', 'library', 'video-upload'
+  const initialLectureItemRef = useRef(null);
+  if (!initialLectureItemRef.current) {
+    initialLectureItemRef.current = createEmptyLectureItem();
+  }
+
+  const [view, setView] = useState('create'); // 'create', 'browse', 'library', 'video-upload', 'content-preview'
   const [activeTab, setActiveTab] = useState('mindmap');
-  const [isLectureEditorOpen, setIsLectureEditorOpen] = useState(false);
-  const [openLectureMenuId, setOpenLectureMenuId] = useState(null);
   const [tabTitles, setTabTitles] = useState({
     mindmap: '',
     text: '',
-    video: '',
   });
   const [toastMessage, setToastMessage] = useState('');
   const [videoEditorDraft, setVideoEditorDraft] = useState(null);
@@ -178,9 +172,14 @@ const App = () => {
   const [isSavingVideo, setIsSavingVideo] = useState(false);
   const [isUploadPreviewPlaying, setIsUploadPreviewPlaying] = useState(false);
   const [isOriginEditorFocused, setIsOriginEditorFocused] = useState(false);
+  const [isLectureEditorFocused, setIsLectureEditorFocused] = useState(false);
   const [hasVisualViewportSupport, setHasVisualViewportSupport] = useState(false);
   const [keyboardToolbarTop, setKeyboardToolbarTop] = useState(null);
   const [isOriginKeyboardVisible, setIsOriginKeyboardVisible] = useState(false);
+  const [contentPreview, setContentPreview] = useState(null);
+  const [lectureItems, setLectureItems] = useState(() => [initialLectureItemRef.current]);
+  const [activeLectureId, setActiveLectureId] = useState(initialLectureItemRef.current.id);
+  const [isLectureSheetOpen, setIsLectureSheetOpen] = useState(false);
 
   const [okStyleIndex, setOkStyleIndex] = useState(0);
   const originEditorRef = useRef(null);
@@ -267,19 +266,10 @@ const App = () => {
 
   const [mindmapVideos, setMindmapVideos] = useState([]);
   const [originContent, setOriginContent] = useState({ html: '', videos: [] });
-  const [lectureEpisodes, setLectureEpisodes] = useState(() => initialLectureEpisodes);
-  const [activeLectureEpisodeId, setActiveLectureEpisodeId] = useState(() => lectureEpisodes[0]?.id);
-  const activeLectureEpisodeIndex = lectureEpisodes.findIndex((episode) => episode.id === activeLectureEpisodeId);
-  const activeLectureEpisode = lectureEpisodes[activeLectureEpisodeIndex] || lectureEpisodes[0];
-  const completedLectureCount = lectureEpisodes.filter(
-    (episode) => episode.video && getPlainText(episode.html)
-  ).length;
-  const totalLectureSeconds = lectureEpisodes.reduce((total, episode) => {
-    const [minutes = 0, seconds = 0] = (episode.video?.duration || '00:00').split(':').map(Number);
-    return total + minutes * 60 + seconds;
-  }, 0);
-  const totalLectureDuration = `${Math.floor(totalLectureSeconds / 60).toString().padStart(2, '0')}:${(totalLectureSeconds % 60).toString().padStart(2, '0')}`;
-  const activeLectureTextCount = getPlainText(activeLectureEpisode?.html).length;
+
+  const activeLectureIndex = Math.max(lectureItems.findIndex((item) => item.id === activeLectureId), 0);
+  const activeLectureItem = lectureItems[activeLectureIndex] ?? lectureItems[0] ?? initialLectureItemRef.current;
+  const savedLectureCount = lectureItems.filter((item) => item.isSaved).length;
 
   const mindmapFields = [
     mindmapData.action,
@@ -300,13 +290,29 @@ const App = () => {
     tabTitles.text.trim() !== '' &&
     getPlainText(originContent.html) !== '';
   const isLectureComplete =
-    lectureEpisodes.length > 0 &&
-    lectureEpisodes.every(
-      (episode) =>
-        episode.title.trim() !== '' &&
-        Boolean(episode.video) &&
-        getPlainText(episode.html) !== ''
-    );
+    lectureItems.some((item) => item.isSaved && isLectureItemComplete(item));
+
+  useEffect(() => {
+    const lectureSummary = lectureItems.map((item, index) => ({
+      index: index + 1,
+      id: item.id,
+      title: item.title || `讲解 ${index + 1}`,
+      isSaved: item.isSaved,
+      hasContent: getPlainText(item.html) !== '',
+      hasVideo: item.videos.length > 0,
+    }));
+
+    console.info('[RootDataPage] lecture state changed', {
+      activeTab,
+      activeLectureId,
+      lectureCount: lectureItems.length,
+      savedLectureCount,
+      shouldShowLectureDropdown: savedLectureCount >= 1,
+      isLectureSheetOpen,
+      lectureSummary,
+    });
+  }, [activeLectureId, activeTab, isLectureSheetOpen, lectureItems, savedLectureCount]);
+
   useEffect(() => {
     if (!toastMessage) return undefined;
     const timer = window.setTimeout(() => setToastMessage(''), 2200);
@@ -322,16 +328,23 @@ const App = () => {
     const handleFocusIn = (event) => {
       if (event.target === originEditorRef.current) {
         setIsOriginEditorFocused(true);
+        setIsLectureEditorFocused(false);
+      }
+
+      if (event.target === lectureEditorRef.current) {
+        setIsLectureEditorFocused(true);
+        setIsOriginEditorFocused(false);
       }
     };
 
     const handleFocusOut = (event) => {
-      if (event.target !== originEditorRef.current) {
+      if (event.target !== originEditorRef.current && event.target !== lectureEditorRef.current) {
         return;
       }
 
       window.setTimeout(() => {
         setIsOriginEditorFocused(document.activeElement === originEditorRef.current);
+        setIsLectureEditorFocused(document.activeElement === lectureEditorRef.current);
       }, 0);
     };
 
@@ -345,8 +358,9 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'text') {
+    if (activeTab !== 'text' && activeTab !== 'video') {
       setIsOriginEditorFocused(false);
+      setIsLectureEditorFocused(false);
       setIsOriginKeyboardVisible(false);
       setKeyboardToolbarTop(null);
     }
@@ -382,9 +396,11 @@ const App = () => {
   }, []);
 
   const handleTabClick = (tab) => {
+    if (tab !== 'video') {
+      setIsLectureSheetOpen(false);
+    }
+
     setActiveTab(tab);
-    setIsLectureEditorOpen(false);
-    setOpenLectureMenuId(null);
   };
 
   const showToast = (message) => {
@@ -402,6 +418,49 @@ const App = () => {
       URL.revokeObjectURL(url);
       createdObjectUrlsRef.current.delete(url);
     }
+  };
+
+  const updateLectureItem = (lectureId, updater) => {
+    setLectureItems((prev) => prev.map((item) => (
+      item.id === lectureId ? updater(item) : item
+    )));
+  };
+
+  const openLectureSheet = () => {
+    console.info('[RootDataPage] openLectureSheet requested', {
+      lectureCount: lectureItems.length,
+      savedLectureCount,
+      canOpen: savedLectureCount >= 1,
+    });
+
+    setActiveTab('video');
+
+    if (savedLectureCount >= 1) {
+      setIsLectureSheetOpen(true);
+    }
+  };
+
+  const selectLectureItem = (lectureId) => {
+    console.info('[RootDataPage] selectLectureItem', {
+      lectureId,
+      previousActiveLectureId: activeLectureId,
+    });
+    setActiveLectureId(lectureId);
+    setActiveTab('video');
+    setIsLectureSheetOpen(false);
+  };
+
+  const addLectureItem = () => {
+    const nextLectureItem = createEmptyLectureItem();
+    console.info('[RootDataPage] addLectureItem', {
+      previousLectureCount: lectureItems.length,
+      nextLectureId: nextLectureItem.id,
+    });
+
+    setLectureItems((prev) => [...prev, nextLectureItem]);
+    setActiveLectureId(nextLectureItem.id);
+    setActiveTab('video');
+    setIsLectureSheetOpen(false);
   };
 
   const createVideoDraftFromFile = (file) => new Promise((resolve) => {
@@ -566,17 +625,15 @@ const App = () => {
       return;
     }
 
-    setLectureEpisodes((prev) => prev.map((episode) => {
-      if (episode.id !== target.episodeId) {
-        return episode;
-      }
+    const targetLectureId = target.lectureId ?? activeLectureItem.id;
+    updateLectureItem(targetLectureId, (item) => {
+      item.videos.forEach(disposeVideoAsset);
 
-      disposeVideoAsset(episode.video);
       return {
-        ...episode,
-        video,
+        ...item,
+        videos: [video],
       };
-    }));
+    });
   };
 
   const saveVideoUpload = async () => {
@@ -619,6 +676,14 @@ const App = () => {
   };
 
   const updateTabTitle = (tab, value) => {
+    if (tab === 'video') {
+      updateLectureItem(activeLectureItem.id, (item) => ({
+        ...item,
+        title: value.slice(0, 100),
+      }));
+      return;
+    }
+
     setTabTitles((prev) => ({
       ...prev,
       [tab]: value.slice(0, 100),
@@ -627,6 +692,17 @@ const App = () => {
 
   const openMindmapPreview = () => {
     setView('browse');
+  };
+
+  const openContentPreview = (sectionKey) => {
+    const normalizedSectionKey = sectionKey === 'text' ? 'original' : sectionKey === 'video' ? 'lecture' : sectionKey;
+    const lectureIndex = Math.max(lectureItems.findIndex((item) => item.id === activeLectureId), 0);
+
+    setContentPreview({
+      sectionKey: normalizedSectionKey,
+      videoIndex: normalizedSectionKey === 'lecture' ? lectureIndex : 0,
+    });
+    setView('content-preview');
   };
 
   const handleSubmit = () => {
@@ -645,8 +721,6 @@ const App = () => {
     if (missingTabs.length > 0) {
       const [firstMissingTab] = missingTabs;
       setActiveTab(firstMissingTab.id);
-      setIsLectureEditorOpen(false);
-      setOpenLectureMenuId(null);
       showToast(`请先完成${missingTabs.map((tab) => tab.label).join('、')}内容后再提交`);
       return;
     }
@@ -674,13 +748,45 @@ const App = () => {
     }
 
     showToast('原文草稿已保存');
+    openContentPreview('text');
   };
 
-  const showSharedDraftButton = activeTab === 'mindmap' || activeTab === 'text';
-  const handleSharedDraftSave = activeTab === 'mindmap' ? handleMindmapComplete : handleOriginSaveDraft;
-  const showOriginKeyboardToolbar =
-    activeTab === 'text' &&
-    isOriginEditorFocused &&
+  const handleLectureSaveDraft = () => {
+    const hasTitle = activeLectureItem.title.trim() !== '';
+    const hasContent = getPlainText(activeLectureItem.html) !== '';
+    const hasVideo = activeLectureItem.videos.length > 0;
+
+    console.info('[RootDataPage] handleLectureSaveDraft', {
+      activeLectureId: activeLectureItem.id,
+      lectureCount: lectureItems.length,
+      hasTitle,
+      hasContent,
+      hasVideo,
+    });
+
+    if (!hasTitle && !hasContent && !hasVideo) {
+      showToast('请先填写讲解标题或内容');
+      return;
+    }
+
+    updateLectureItem(activeLectureItem.id, (item) => ({
+      ...item,
+      isSaved: true,
+    }));
+    showToast('讲解草稿已保存');
+    openContentPreview('video');
+  };
+
+  const showSharedDraftButton = activeTab === 'mindmap' || activeTab === 'text' || activeTab === 'video';
+  const handleSharedDraftSave = activeTab === 'mindmap'
+    ? handleMindmapComplete
+    : activeTab === 'text'
+      ? handleOriginSaveDraft
+      : handleLectureSaveDraft;
+  const activeRichTextEditorType = activeTab === 'video' ? 'lecture' : 'origin';
+  const showRichTextKeyboardToolbar =
+    ((activeTab === 'text' && isOriginEditorFocused) ||
+      (activeTab === 'video' && isLectureEditorFocused)) &&
     (!hasVisualViewportSupport || isOriginKeyboardVisible);
   const originKeyboardToolbarStyle = hasVisualViewportSupport && keyboardToolbarTop !== null
     ? { top: `${keyboardToolbarTop}px` }
@@ -753,11 +859,10 @@ const App = () => {
         return;
       }
 
-      setLectureEpisodes((prev) => prev.map((episode) =>
-        episode.id === activeLectureEpisodeId
-          ? { ...episode, html: content }
-          : episode
-      ));
+      updateLectureItem(activeLectureItem.id, (item) => ({
+        ...item,
+        html: content,
+      }));
     }
   };
 
@@ -770,343 +875,20 @@ const App = () => {
     };
 
     assignVideoToTarget(
-      target === 'mindmap'
-        ? { type: 'mindmap' }
-        : target === 'origin'
-          ? { type: 'origin' }
-          : { type: 'lecture', episodeId: activeLectureEpisodeId },
+      typeof target === 'string'
+        ? target === 'mindmap'
+          ? { type: 'mindmap' }
+          : target === 'origin'
+            ? { type: 'origin' }
+            : { type: 'lecture', lectureId: activeLectureItem.id }
+        : target,
       nextVideo
     );
-  };
-
-  const addLectureEpisode = () => {
-    const nextEpisode = createLectureEpisode(lectureEpisodes.length);
-    setLectureEpisodes(prev => [...prev, nextEpisode]);
-    setActiveLectureEpisodeId(nextEpisode.id);
-    setIsLectureEditorOpen(true);
-    setOpenLectureMenuId(null);
-  };
-
-  const removeLectureEpisode = (id) => {
-    if (lectureEpisodes.length === 1) return;
-
-    const removedEpisode = lectureEpisodes.find((episode) => episode.id === id);
-    const removeIndex = lectureEpisodes.findIndex(episode => episode.id === id);
-    const nextEpisodes = lectureEpisodes.filter(episode => episode.id !== id);
-    disposeVideoAsset(removedEpisode?.video);
-    setLectureEpisodes(nextEpisodes);
-
-    if (activeLectureEpisodeId === id) {
-      const nextActiveIndex = Math.max(0, removeIndex - 1);
-      setActiveLectureEpisodeId(nextEpisodes[nextActiveIndex].id);
-    }
-  };
-
-  const updateLectureEpisodeTitle = (id, titleValue) => {
-    setLectureEpisodes(prev => prev.map(episode =>
-      episode.id === id
-        ? { ...episode, title: titleValue }
-        : episode
-    ));
-  };
-
-  const removeActiveLectureVideo = () => {
-    setLectureEpisodes(prev => prev.map(episode =>
-      episode.id === activeLectureEpisodeId
-        ? (() => {
-            disposeVideoAsset(episode.video);
-            return { ...episode, video: null };
-          })()
-        : episode
-    ));
-  };
-
-  const openLectureEpisodeEditor = (episodeId) => {
-    setActiveLectureEpisodeId(episodeId);
-    setIsLectureEditorOpen(true);
-    setOpenLectureMenuId(null);
-  };
-
-  const closeLectureEpisodeEditor = () => {
-    setIsLectureEditorOpen(false);
-  };
-
-  const saveLectureEpisode = () => {
-    setLectureEpisodes(prev => prev.map(episode =>
-      episode.id === activeLectureEpisodeId
-        ? { ...episode, updatedAt: '刚刚更新' }
-        : episode
-    ));
-    closeLectureEpisodeEditor();
-  };
-
-  const deleteLectureEpisodeFromList = (episodeId) => {
-    if (lectureEpisodes.length === 1) return;
-    removeLectureEpisode(episodeId);
-    setOpenLectureMenuId(null);
-  };
-
-  const handleDivActionKeyDown = (event, action) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      action();
-    }
   };
 
   const handleBackHome = () => {
     navigate('/');
   };
-
-  const AttachedVideoSection = ({ items, onAdd, onRemove, maxCount = Infinity }) => (
-    <div className="rounded-[15px] border border-[#ECECF3] bg-white p-2 shadow-[0_10px_30px_rgba(17,24,39,0.04)]">
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div key={item.id} className="flex items-start gap-4">
-            <div className="relative h-[120px] w-[180px] shrink-0 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#5C6F8A_0%,#2F4A67_100%)]">
-              <button
-                type="button"
-                onClick={() => onRemove(item.id)}
-                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#FF5E5E] shadow-[0_6px_16px_rgba(17,24,39,0.14)] backdrop-blur-sm transition active:scale-95"
-                aria-label="删除视频"
-              >
-                <Trash2 size={16} />
-              </button>
-              {item.cover && (
-                <img
-                  src={item.cover}
-                  alt={`${item.title}封面`}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
-              <div className="absolute inset-0 bg-black/20" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
-                  <PlayCircle size={32} strokeWidth={1.8} />
-                </div>
-              </div>
-              <div className="absolute bottom-2 left-2 rounded-[10px] bg-black/55 px-2 py-0.5 text-[11px] font-semibold text-white">
-                {item.duration || '12:45'}
-              </div>
-            </div>
-
-            <div className="min-w-0 flex-1 self-stretch py-2">
-              <div
-                className="truncate text-[14px] font-bold leading-6 text-[#111827]"
-                title={item.fileName || item.title}
-              >
-                {truncateMiddle(item.fileName || item.title, 24)}
-              </div>
-              {item.tags?.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {item.tags.map((tag) => (
-                    <span
-                      key={`${item.id}-${tag}`}
-                      className="rounded-full bg-[#FCEAEC] px-2.5 py-1 text-[11px] font-semibold text-[#C8161D]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {items.length < maxCount && (
-          <div
-            type="button"
-            onClick={onAdd}
-            className="flex min-h-[150px] w-full flex-col items-center justify-center rounded-[24px]  px-3 py-6 text-center"
-          >
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#C8161D] text-white ]">
-              <Plus size={20} strokeWidth={2.8} />
-            </div>
-            <div className="text-[14px]  text-[#B11319]">
-              上传视频
-            </div>
-            <div className="mt-2 text-[12px] font-medium text-[#A1A1AA]">
-              支持 MP4 / MOV / AVI 等格式，单个视频不超过 200MB
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderLectureEditPage = () => (
-    <div className="flex h-full flex-col bg-white">
-      <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-gray-100 px-4">
-        <div
-          onClick={closeLectureEpisodeEditor}
-          onKeyDown={(event) => handleDivActionKeyDown(event, closeLectureEpisodeEditor)}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-[#374151] active:bg-gray-100"
-          role="button"
-          tabIndex={0}
-          aria-label="返回讲解列表"
-        >
-          <ChevronLeft size={25} strokeWidth={2.4} />
-        </div>
-        <div className="text-[19px] font-bold text-[#111827]">
-          编辑第{activeLectureEpisodeIndex + 1}集
-        </div>
-        <div className="h-10 w-10 shrink-0" />
-      </div>
-
-      <div className="flex-1 overflow-y-auto no-scrollbar px-5 py-5">
-        <div className="mb-6">
-          <label className="mb-2 block text-[13px] font-bold text-[#4B5563]">集标题</label>
-          <div className="relative">
-            <input
-              value={activeLectureEpisode.title}
-              onChange={(e) => updateLectureEpisodeTitle(activeLectureEpisode.id, e.target.value.slice(0, 30))}
-              className="h-12 w-full rounded-xl border border-[#E5E7EB] px-3 pr-14 text-[16px] font-medium text-[#1F2937] outline-none transition-colors focus:border-[#C8161D]"
-              placeholder={`第 ${activeLectureEpisodeIndex + 1} 集标题`}
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-gray-400">
-              {activeLectureEpisode.title.length}/30
-            </span>
-          </div>
-        </div>
-
-        <div className="mb-7">
-          <div className="mb-3 text-[13px] font-bold text-[#4B5563]">视频</div>
-          <div className="overflow-hidden rounded-xl bg-[#FFF3F4] shadow-[0_1px_0_rgba(17,24,39,0.04)]">
-            <div className="relative aspect-video overflow-hidden bg-[#C8161D]">
-              {activeLectureEpisode.video && (
-                <button
-                  type="button"
-                  onClick={removeActiveLectureVideo}
-                  onKeyDown={(event) => handleDivActionKeyDown(event, removeActiveLectureVideo)}
-                  className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#FF5E5E] shadow-[0_6px_16px_rgba(17,24,39,0.14)] backdrop-blur-sm transition active:scale-95"
-                  aria-label="删除视频"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-              {activeLectureEpisode.video?.cover && (
-                <img
-                  src={activeLectureEpisode.video.cover}
-                  alt={`${activeLectureEpisode.title}视频封面`}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
-              <div className="absolute inset-0 bg-black/20" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-14 w-14 items-center justify-center text-white backdrop-blur-sm">
-                  <PlayCircle size={34} strokeWidth={1.8} />
-                </div>
-              </div>
-              {/* <div className="absolute bottom-0 left-0 right-0 flex h-10 items-center justify-between bg-black/48 px-3 text-white">
-                <span className="text-[13px]">{activeLectureEpisode.video?.duration || '00:00'}</span>
-                <div className="flex items-center gap-3 text-white/85">
-                  <RefreshCcw size={16} />
-                  <Maximize2 size={16} />
-                </div>
-              </div> */}
-            </div>
-
-            {activeLectureEpisode.video ? (
-              <div className="flex items-start gap-3 bg-[#FAFAFC] px-4 py-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C8161D] text-white">
-                  <Video size={15} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div
-                    className="truncate text-[13px] font-bold text-[#374151]"
-                    title={activeLectureEpisode.video.fileName || activeLectureEpisode.video.title}
-                  >
-                    {truncateMiddle(activeLectureEpisode.video.fileName || activeLectureEpisode.video.title, 28)}
-                  </div>
-                  {activeLectureEpisode.video.tags?.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {activeLectureEpisode.video.tags.map((tag) => (
-                        <span
-                          key={`${activeLectureEpisode.video.id}-${tag}`}
-                          className="rounded-full bg-[#FCEAEC] px-2.5 py-1 text-[11px] font-semibold text-[#C8161D]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div
-                onClick={() => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId })}
-                onKeyDown={(event) => handleDivActionKeyDown(event, () => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId }))}
-                className="flex w-full items-center justify-center gap-2 bg-[#FAFAFC] px-4 py-4 text-[14px] font-bold text-[#C8161D]"
-                role="button"
-                tabIndex={0}
-              >
-                <UploadCloud size={18} />
-                添加视频
-              </div>
-            )}
-          </div>
-
-          <div
-            onClick={() => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId })}
-            onKeyDown={(event) => handleDivActionKeyDown(event, () => openVideoPicker({ type: 'lecture', episodeId: activeLectureEpisodeId }))}
-            className="mt-4 flex h-[58px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-[#F1B8BB] text-[#C8161D] active:bg-[#FFF3F4]"
-            role="button"
-            tabIndex={0}
-          >
-            <span className="flex items-center gap-2 text-[14px] font-bold">
-              <UploadCloud size={18} />
-              {activeLectureEpisode.video ? '更换视频' : '上传视频'}
-            </span>
-            <span className="mt-1 text-[11px] font-medium text-gray-400">支持 MP4 / MOV / AVI 等格式，最大 2GB</span>
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-3 text-[13px] font-bold text-[#4B5563]">文本讲解</div>
-          <div className="relative overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
-            <div className="flex h-11 items-center gap-1 border-b border-[#EEF0F4] bg-[#FAFAFC] px-3 text-[#4B5563]">
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('bold', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('bold', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="加粗"><Bold size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('italic', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('italic', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="斜体"><Italic size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('underline', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('underline', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="下划线"><Underline size={17} /></div>
-              <div className="mx-1 h-5 w-px bg-[#E5E7EB]" />
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('insertUnorderedList', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('insertUnorderedList', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="项目列表"><List size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('formatBlock', 'blockquote', 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('formatBlock', 'blockquote', 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="引用"><Quote size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('createLink', '#', 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('createLink', '#', 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="链接"><Link size={17} /></div>
-              <div className="ml-auto flex gap-1 text-gray-300">
-                <div onMouseDown={keepEditorSelection} onClick={() => execCommand('undo', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('undo', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="撤销"><Undo2 size={17} /></div>
-                <div onMouseDown={keepEditorSelection} onClick={() => execCommand('redo', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('redo', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="重做"><Redo2 size={17} /></div>
-              </div>
-            </div>
-            <div
-              key={activeLectureEpisode.id}
-              ref={lectureEditorRef}
-              contentEditable
-              onInput={() => updateHtmlContent('lecture')}
-              className="min-h-[240px] p-4 pb-10 text-[15px] leading-7 text-[#374151] outline-none"
-              dangerouslySetInnerHTML={{ __html: activeLectureEpisode.html }}
-            />
-            {!activeLectureEpisode.html && (
-              <div className="pointer-events-none absolute left-4 top-[62px] text-[14px] text-gray-300">
-                请输入本集讲解内容...
-              </div>
-            )}
-            <div className="absolute bottom-3 right-4 text-[13px] text-gray-400">
-              {activeLectureTextCount}/5000
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-6">
-          <button
-            type="button"
-            onClick={saveLectureEpisode}
-            className="flex h-[48px] w-full items-center justify-center rounded-[15px] bg-[#C8161D] text-[18px] font-bold text-white"
-          >
-            保存草稿
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderVideoUploadPage = () => (
     <div className="flex h-full flex-col bg-white">
@@ -1230,10 +1012,6 @@ const App = () => {
   );
 
   const renderCreatePage = () => {
-    if (activeTab === 'video' && isLectureEditorOpen && activeLectureEpisode) {
-      return renderLectureEditPage();
-    }
-
     const createTabs = [
       { id: 'mindmap', label: '脑图', icon: <Share2 size={18} /> },
       { id: 'text', label: '原文', icon: <FileText size={18} /> },
@@ -1253,7 +1031,7 @@ const App = () => {
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <span className="font-medium text-[17px]">创建根数据</span>
+          {/* <span className="font-medium text-[17px]">创建根数据</span> */}
         </div>
         <div className="flex items-center gap-2">
           {showSharedDraftButton && (
@@ -1341,32 +1119,27 @@ const App = () => {
         )}
 
         {activeTab === 'text' && (
-          <div className="space-y-4">
-            <div className="">
-              <input
-                type="text"
-                placeholder="请输入原文标题"
-                className="min-w-0 w-full border-none bg-transparent text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
-                value={tabTitles.text}
-                onChange={(e) => updateTabTitle('text', e.target.value)}
-              />
-            </div>
-            <div className="relative min-h-[400px] overflow-hidden rounded-[22px] bg-white">
-              <div
-                ref={originEditorRef}
-                contentEditable
-                onInput={() => updateHtmlContent('origin')}
-                className="flex-1 overflow-y-auto px-4 pb-24 text-left text-[15px] leading-8 text-[#374151] outline-none no-scrollbar"
-                style={{ minHeight: '300px', textAlign: 'left' }}
-                dangerouslySetInnerHTML={{ __html: originContent.html }}
-              />
-              {!originContent.html && (
-                <div className="pointer-events-none absolute left-1 right-4 top-1 w-auto text-left text-sm text-gray-300">
-                  请输入原文内容...
-                </div>
-              )}
-            </div>
-            {originContent.videos.length > 0 && (
+          <ContentTabPanel
+            beforeEditor={(
+              <div>
+                <input
+                  type="text"
+                  placeholder="请输入原文标题"
+                  className="min-w-0 w-full border-none bg-transparent text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
+                  value={tabTitles.text}
+                  onChange={(e) => updateTabTitle('text', e.target.value)}
+                />
+              </div>
+            )}
+            editorRef={originEditorRef}
+            html={originContent.html}
+            onInput={() => updateHtmlContent('origin')}
+            placeholder="请输入原文内容..."
+            wrapperClassName="min-h-[400px] rounded-[22px] bg-white"
+            contentClassName="flex-1 overflow-y-auto px-4 pb-24 text-left text-[15px] leading-8 text-[#374151] outline-none no-scrollbar"
+            placeholderClassName="left-1 right-4 top-1 w-auto text-left text-sm text-gray-300"
+            editorStyle={{ minHeight: '300px', textAlign: 'left' }}
+            afterEditor={originContent.videos.length > 0 ? (
               <AttachedVideoSection
                 items={originContent.videos}
                 maxCount={1}
@@ -1385,160 +1158,57 @@ const App = () => {
                   }))
                 }
               />
-            )}
-          </div>
+            ) : null}
+          />
         )}
 
         {activeTab === 'video' && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-[#EEF0F4] bg-white shadow-[0_10px_28px_rgba(17,24,39,0.04)]">
-              <div className="flex items-center justify-between border-b border-[#EEF0F4] px-4 py-4">
-                <div>
-                  <div className="text-[15px] font-bold text-[#1F2329]">讲解（{lectureEpisodes.length}集）</div>
-                  <div className="mt-1 text-[12px] font-medium text-[#6B7280]">
-                    已完成 {completedLectureCount} 集，全部时长 {totalLectureDuration}
-                  </div>
-                </div>
-                <div
-                  onClick={addLectureEpisode}
-                  onKeyDown={(event) => handleDivActionKeyDown(event, addLectureEpisode)}
-                  className="flex h-[28px] items-center gap-1.5 rounded-full bg-[#C8161D] px-4 text-[11px]  text-white shadow-[0_8px_18px_rgba(200,22,29,0.24)] active:scale-95"
-                  role="button"
-                  tabIndex={0}
-                >
-                  <Plus size={18} strokeWidth={2} />
-                  新增一集
-                </div>
+          <ContentTabPanel
+            editorKey={activeLectureItem.id}
+            beforeEditor={(
+              <div>
+                <input
+                  type="text"
+                  placeholder="请输入讲解标题"
+                  className="min-w-0 w-full border-none bg-transparent text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
+                  value={activeLectureItem.title}
+                  onChange={(e) => updateTabTitle('video', e.target.value)}
+                />
               </div>
+            )}
+            editorRef={lectureEditorRef}
+            html={activeLectureItem.html}
+            onInput={() => updateHtmlContent('lecture')}
+            placeholder="请输入讲解内容..."
+            wrapperClassName="min-h-[400px] rounded-[22px] bg-white"
+            contentClassName="flex-1 overflow-y-auto px-4 pb-24 text-left text-[15px] leading-8 text-[#374151] outline-none no-scrollbar"
+            placeholderClassName="left-1 right-4 top-1 w-auto text-left text-sm text-gray-300"
+            editorStyle={{ minHeight: '300px', textAlign: 'left' }}
+            afterEditor={activeLectureItem.videos.length > 0 ? (
+              <AttachedVideoSection
+                items={activeLectureItem.videos}
+                maxCount={1}
+                onAdd={() => openVideoPicker({ type: 'lecture', lectureId: activeLectureItem.id })}
+                onRemove={(id) =>
+                  updateLectureItem(activeLectureItem.id, (item) => ({
+                    ...item,
+                    videos: item.videos.filter((video) => {
+                      if (video.id === id) {
+                        disposeVideoAsset(video);
+                        return false;
+                      }
 
-              <div className="space-y-3 p-3">
-                {lectureEpisodes.map((episode, idx) => {
-                  const hasVideo = Boolean(episode.video);
-                  const hasText = Boolean(episode.html.trim());
-
-                  return (
-                    <div
-                      key={episode.id}
-                      className="w-full rounded-xl border border-[#EEF0F4] bg-white p-4 text-left shadow-[0_4px_16px_rgba(17,24,39,0.03)]"
-                    >
-                      <div className="relative mb-4 flex items-start gap-3">
-                        <span className="shrink-0 rounded-[5px] bg-[#FCEAEC] px-3 py-[4px] text-[8px] font-black text-[#C8161D]">
-                          第{idx + 1}集
-                        </span>
-                        <div className="min-w-0 flex-1 pt-0.5 text-[11px] font-bold text-[#111827]">
-                          {episode.title}
-                          {episode.video?.tags?.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {episode.video.tags.map((tag) => (
-                                <span
-                                  key={`${episode.id}-${tag}`}
-                                  className="rounded-full bg-[#FCEAEC] px-2.5 py-1 text-[10px] font-semibold text-[#C8161D]"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div
-                          className="relative -mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#4B5563] active:bg-gray-100"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setOpenLectureMenuId(openLectureMenuId === episode.id ? null : episode.id);
-                          }}
-                          onKeyDown={(event) => {
-                            event.stopPropagation();
-                            handleDivActionKeyDown(event, () => setOpenLectureMenuId(openLectureMenuId === episode.id ? null : episode.id));
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          aria-label="打开分集操作菜单"
-                        >
-                          <MoreVertical size={22} />
-                        </div>
-                        {openLectureMenuId === episode.id && (
-                          <div
-                            className="absolute right-0 top-8 z-20 w-[108px] overflow-hidden rounded-xl bg-white py-1.5 shadow-[0_10px_28px_rgba(17,24,39,0.16)] ring-1 ring-black/5"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <div
-                              className="flex h-10 items-center gap-2 px-3 text-[13px] font-medium text-[#374151] active:bg-gray-50"
-                              onClick={() => openLectureEpisodeEditor(episode.id)}
-                              onKeyDown={(event) => handleDivActionKeyDown(event, () => openLectureEpisodeEditor(episode.id))}
-                              role="button"
-                              tabIndex={0}
-                            >
-                              <Pencil size={15} />
-                              编辑
-                            </div>
-                            <div
-                              className={`flex h-10 items-center gap-2 px-3 text-[13px] font-medium ${
-                                lectureEpisodes.length === 1 ? 'text-gray-300' : 'text-[#EF4444] active:bg-red-50'
-                              }`}
-                              onClick={() => deleteLectureEpisodeFromList(episode.id)}
-                              onKeyDown={(event) => handleDivActionKeyDown(event, () => deleteLectureEpisodeFromList(episode.id))}
-                              role="button"
-                              tabIndex={0}
-                              aria-disabled={lectureEpisodes.length === 1}
-                            >
-                              <Trash2 size={15} />
-                              删除
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        <div className={`relative h-[112px] w-full shrink-0 overflow-hidden rounded-lg ${hasVideo ? 'bg-[#C8161D]' : 'bg-[#F5F6F8]'}`}>
-                          {hasVideo ? (
-                            <>
-                              {episode.video.cover && (
-                                <img
-                                  src={episode.video.cover}
-                                  alt={`${episode.title}视频封面`}
-                                  className="absolute inset-0 h-full w-full object-cover"
-                                />
-                              )}
-                              <div className="absolute inset-0 bg-black/20" />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="flex h-11 w-11 items-center justify-center  text-white">
-                                  <PlayCircle size={29} strokeWidth={1.8} />
-                                </div>
-                              </div>
-                              <span className="absolute bottom-2 left-2 rounded-md bg-black/45 px-2 py-0.5 text-[12px] font-bold text-white">
-                                {episode.video.duration || '00:00'}
-                              </span>
-                            </>
-                          ) : (
-                            <div className="flex h-full flex-col items-center justify-center gap-1 text-[#9CA3AF] ">
-                              {/* <Video size={28} /> */}
-                              {/* <Plus size={14} /> */}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* <div className="min-w-0 flex-1 space-y-2">
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-[#374151]">
-                            {hasVideo ? <CheckCircle2 size={16} className="text-[#4CAF7A]" /> : <AlertCircle size={16} className="text-[#F59E0B]" />}
-                            {hasVideo ? '已上传视频' : '未上传视频'}
-                          </div>
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-[#374151]">
-                            {hasText ? <CheckCircle2 size={16} className="text-[#4CAF7A]" /> : <AlertCircle size={16} className="text-[#F59E0B]" />}
-                            {hasText ? '已填写讲解' : '未填写讲解'}
-                          </div>
-                          <div className="pt-1 text-[12px] font-medium text-[#9CA3AF]">{episode.updatedAt}</div>
-                        </div> */}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+                      return true;
+                    }),
+                  }))
+                }
+              />
+            ) : null}
+          />
         )}
       </div>
 
-      {showOriginKeyboardToolbar && (
+      {showRichTextKeyboardToolbar && (
         <div
           className="pointer-events-none fixed inset-x-0 z-30"
           style={originKeyboardToolbarStyle}
@@ -1547,7 +1217,7 @@ const App = () => {
             <button
               type="button"
               onMouseDown={keepEditorSelection}
-              onClick={() => execCommand('bold', null, 'origin')}
+              onClick={() => execCommand('bold', null, activeRichTextEditorType)}
               className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
               aria-label="加粗"
             >
@@ -1556,7 +1226,7 @@ const App = () => {
             <button
               type="button"
               onMouseDown={keepEditorSelection}
-              onClick={() => execCommand('underline', null, 'origin')}
+              onClick={() => execCommand('underline', null, activeRichTextEditorType)}
               className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
               aria-label="下划线"
             >
@@ -1566,7 +1236,7 @@ const App = () => {
             <button
               type="button"
               onMouseDown={keepEditorSelection}
-              onClick={() => insertImage('origin')}
+              onClick={() => insertImage(activeRichTextEditorType)}
               className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
               aria-label="插图"
             >
@@ -1576,7 +1246,11 @@ const App = () => {
             <button
               type="button"
               onMouseDown={keepEditorSelection}
-              onClick={() => openVideoPicker({ type: 'origin' })}
+              onClick={() => openVideoPicker(
+                activeRichTextEditorType === 'lecture'
+                  ? { type: 'lecture', lectureId: activeLectureItem.id }
+                  : { type: activeRichTextEditorType }
+              )}
               className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
               aria-label="添加视频"
             >
@@ -1586,7 +1260,7 @@ const App = () => {
         </div>
       )}
 
-      {!showOriginKeyboardToolbar && (
+      {!showRichTextKeyboardToolbar && (
         <div
           className="pointer-events-none absolute inset-x-4 z-20"
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 36px)' }}
@@ -1594,28 +1268,96 @@ const App = () => {
           <div className="pointer-events-auto flex gap-3">
             {createTabs.map((tab) => {
               const isActive = activeTab === tab.id;
+              const showLectureDropdown = tab.id === 'video' && savedLectureCount >= 1;
+              const handleCreateTabClick = () => {
+                if (tab.id === 'video' && isActive && showLectureDropdown) {
+                  openLectureSheet();
+                  return;
+                }
+
+                handleTabClick(tab.id);
+              };
 
               return (
-                <button
+                <div
                   key={tab.id}
-                  type="button"
-                  onClick={() => handleTabClick(tab.id)}
-                  className={`flex h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[12px] border px-3 transition-all active:scale-[0.98] ${
-                    isActive
-                      ? 'border-[#C8161D] bg-[#C8161D] text-white'
-                      : 'border-[#E5E7EB] bg-white text-[#3F3F46]'
-                  }`}
+                  className="relative flex min-w-0 flex-1"
                 >
-                  {React.cloneElement(tab.icon, { size: 16, strokeWidth: isActive ? 2.25 : 2 })}
-                  <span className={`truncate text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>
-                    {tab.label}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleCreateTabClick}
+                    className={`flex h-[40px] w-full min-w-0 items-center justify-center gap-1.5 rounded-[12px] border px-3 transition-all active:scale-[0.98] ${
+                      showLectureDropdown ? 'pr-8' : ''
+                    } ${
+                      isActive
+                        ? 'border-[#C8161D] bg-[#C8161D] text-white'
+                        : 'border-[#E5E7EB] bg-white text-[#3F3F46]'
+                    }`}
+                  >
+                    {React.cloneElement(tab.icon, { size: 16, strokeWidth: isActive ? 2.25 : 2 })}
+                    <span className={`truncate text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                      {tab.label}
+                    </span>
+                  </button>
+                  {showLectureDropdown ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openLectureSheet();
+                      }}
+                      className={`absolute inset-y-0 right-0 flex w-8 items-center justify-center rounded-r-[12px] ${
+                        isActive ? 'text-white/92' : 'text-[#6B7280]'
+                      }`}
+                      aria-label="选择讲解"
+                    >
+                      <ChevronDown size={14} strokeWidth={2.4} />
+                    </button>
+                  ) : null}
+                </div>
               );
             })}
           </div>
         </div>
       )}
+
+      <button
+        aria-hidden={!isLectureSheetOpen}
+        className={`overlay-mask ${isLectureSheetOpen ? 'active' : ''}`}
+        onClick={() => setIsLectureSheetOpen(false)}
+        type="button"
+      />
+
+      <BottomSheet
+        open={isLectureSheetOpen}
+        title={`讲解列表 (${lectureItems.length})`}
+        onClose={() => setIsLectureSheetOpen(false)}
+      >
+        <div className="episode-list">
+          {lectureItems.map((item, index) => (
+            <button
+              className={`video-choice root-lecture-choice ${item.id === activeLectureItem.id ? 'active' : ''}`}
+              key={item.id}
+              onClick={() => selectLectureItem(item.id)}
+              type="button"
+            >
+              <span className="video-choice-index">{index + 1}</span>
+              <span className="video-choice-title">{getLectureSheetTitle(item, index)}</span>
+              {/* <span className="video-choice-duration">{item.isSaved ? '已保存' : '未保存'}</span> */}
+            </button>
+          ))}
+        </div>
+        <div className="px-4 pb-4 pt-1">
+          <button
+            type="button"
+            onClick={addLectureItem}
+            className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[12px] border border-[#C8161D] bg-[#C8161D] px-3 text-white transition-all active:scale-[0.98]"
+          >
+            <Plus size={16} strokeWidth={2.8} />
+            <span className="text-[13px] font-bold">增加讲解</span>
+          </button>
+        </div>
+      </BottomSheet>
 
       <style>{`
         .inline-input { 
@@ -1627,6 +1369,15 @@ const App = () => {
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .root-mindmap-complete .preview-mark { text-decoration: none; }
+        .root-lecture-choice.active {
+          border-color: rgba(200, 22, 29, 0.55);
+          background: #FCEAEC;
+          color: ${THEME_COLOR};
+        }
+        .root-lecture-choice.active .video-choice-index {
+          background: rgba(200, 22, 29, 0.12);
+          color: ${THEME_COLOR};
+        }
       `}</style>
     </div>
     );
@@ -1649,6 +1400,38 @@ const App = () => {
     );
   };
 
+  const renderContentPreviewPage = () => {
+    if (!contentPreview) {
+      return null;
+    }
+
+    const fakeLecturePreviewData = buildFakeLecturePreviewData(lectureItems.length);
+    const previewSection = contentPreview.sectionKey === 'original'
+      ? {
+          title: '原文预览',
+          content: FAKE_ORIGINAL_PREVIEW_HTML,
+          videos: [],
+        }
+      : {
+          title: '讲解预览',
+          content: fakeLecturePreviewData.map((item) => item.content),
+          videos: fakeLecturePreviewData.map((item) => item.video),
+        };
+
+    return (
+      <ContentPreviewPage
+        onClose={() => {
+          setContentPreview(null);
+          setView('create');
+        }}
+        section={previewSection}
+        sectionKey={contentPreview.sectionKey}
+        videoIndex={contentPreview.videoIndex}
+        showEpisodePicker={false}
+      />
+    );
+  };
+
   const renderLibraryPage = () => (
     <div className="flex flex-col h-full bg-white">
       <div className="px-4 py-3 flex items-center space-x-3 border-b border-gray-100">
@@ -1663,7 +1446,7 @@ const App = () => {
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {mockLibraryVideos.map(video => (
-          <div key={video.id} className="flex items-center p-3 border border-gray-100 rounded-xl hover:bg-[#FDEBEC] cursor-pointer" onClick={() => { addVideoToTarget(activeTab === 'mindmap' ? 'mindmap' : activeTab === 'text' ? 'origin' : 'lecture', { title: video.title, source: 'library', duration: video.duration, size: video.size, cover: video.cover }); setView('create'); }}>
+          <div key={video.id} className="flex items-center p-3 border border-gray-100 rounded-xl hover:bg-[#FDEBEC] cursor-pointer" onClick={() => { addVideoToTarget(activeTab === 'mindmap' ? 'mindmap' : activeTab === 'text' ? 'origin' : { type: 'lecture', lectureId: activeLectureItem.id }, { title: video.title, source: 'library', duration: video.duration, size: video.size, cover: video.cover }); setView('create'); }}>
             <div className="relative mr-4 h-16 w-16 overflow-hidden rounded-lg bg-gray-100">
               <img src={video.cover} alt={`${video.title}封面`} className="h-full w-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -1694,7 +1477,9 @@ const App = () => {
             ? renderLibraryPage()
             : view === 'video-upload'
               ? renderVideoUploadPage()
-              : renderBrowsePage()}
+              : view === 'content-preview'
+                ? renderContentPreviewPage()
+                : renderBrowsePage()}
         {toastMessage && (
           <div className="pointer-events-none absolute left-1/2 top-6 z-50 w-[calc(100%-32px)] -translate-x-1/2">
             <div className="rounded-2xl bg-[rgba(17,24,39,0.88)] px-4 py-3 text-center text-[13px] font-medium leading-5 text-white shadow-[0_12px_32px_rgba(17,24,39,0.22)] backdrop-blur-sm">
@@ -1706,5 +1491,25 @@ const App = () => {
     </div>
   );
 };
+
+function BottomSheet({ children, open, onClose, title }) {
+  return (
+    <section className={`lark-sheet ${open ? 'open' : ''}`}>
+      <div className="sheet-bar" />
+      <div className="sheet-header">
+        <h2 className="sheet-title">{title}</h2>
+        <button
+          aria-label="关闭面板"
+          className="sheet-close"
+          onClick={onClose}
+          type="button"
+        >
+          <X size={18} />
+        </button>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default App;

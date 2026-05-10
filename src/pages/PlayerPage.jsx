@@ -12,18 +12,13 @@ import {
 } from 'lucide-react';
 import { TiArrowForward } from 'react-icons/ti';
 import './player.css';
-import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
+import ContentPreviewPage from '../components/ContentPreviewPage.jsx';
 
 const sectionTabs = [
   { key: 'mindmap', label: '脑图' },
   { key: 'lecture', label: '讲解' },
   { key: 'original', label: '原文' },
 ];
-
-const okStampStyle = {
-  className: 'ok-stamp',
-  extra: {},
-};
 
 const sampleVideos = [
   'https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4',
@@ -879,7 +874,6 @@ function App() {
         {previewRoot && previewSection ? (
           <ContentPreviewPage
             onClose={closePreview}
-            root={previewRoot}
             section={previewSection}
             sectionKey={preview.sectionKey}
             videoIndex={previewVideoIndex}
@@ -925,109 +919,6 @@ function Avatar({
           src={imageUrl}
         />
       ) : null}
-    </div>
-  );
-}
-
-function ContentPreviewPage({ onClose, section, sectionKey, videoIndex = 0 }) {
-  return (
-    <section className="content-preview-page">
-      {sectionKey === 'mindmap' ? (
-        <MindmapPreviewPage
-          title={section.title}
-          mindmapData={section.content}
-          okStyle={okStampStyle}
-          onBack={onClose}
-        />
-      ) : null}
-      {sectionKey !== 'mindmap' ? (
-        <>
-          <header className="content-preview-header">
-            <button
-              aria-label="返回播放页"
-              className="preview-back-button"
-              onClick={onClose}
-              type="button"
-            >
-              <ChevronLeft size={22} />
-            </button>
-            <h2>{section.title}</h2>
-          </header>
-
-          <div className="content-preview-body">
-            {sectionKey === 'original' ? (
-              <OriginalPreview content={section.content} />
-            ) : null}
-            {sectionKey === 'lecture' ? (
-              <LecturePreview
-                content={section.content}
-                videos={section.videos}
-                videoIndex={videoIndex}
-              />
-            ) : null}
-          </div>
-        </>
-      ) : null}
-    </section>
-  );
-}
-
-function OriginalPreview({ content }) {
-  return (
-    <article
-      className="original-preview"
-      dangerouslySetInnerHTML={{ __html: content }}
-    />
-  );
-}
-
-function LecturePreview({ content = [], videos = [], videoIndex }) {
-  const totalEpisodes = Math.max(content.length, videos.length);
-  const [selectedIndex, setSelectedIndex] = useState(
-    clamp(videoIndex ?? 0, 0, Math.max(totalEpisodes - 1, 0))
-  );
-
-  useEffect(() => {
-    setSelectedIndex(clamp(videoIndex ?? 0, 0, Math.max(totalEpisodes - 1, 0)));
-  }, [totalEpisodes, videoIndex]);
-
-  const selectedVideo = videos[selectedIndex] ?? videos[videos.length - 1];
-  const item = content[selectedIndex] ?? content[content.length - 1];
-  const paragraphs = item?.content
-    ?.split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean) ?? [];
-
-  if (!selectedVideo || !item) {
-    return null;
-  }
-
-  return (
-    <div className="lecture-preview">
-      <article className="lecture-card" key={selectedVideo.id}>
-        <h3>{selectedVideo.title}</h3>
-        <div className="lecture-copy">
-          {paragraphs.map((paragraph, index) => (
-            <p key={`${selectedVideo.id}-paragraph-${index + 1}`}>{paragraph}</p>
-          ))}
-        </div>
-      </article>
-
-      <section className="lecture-episode-picker" aria-label={`讲解全 ${totalEpisodes} 集`}>
-        <div className="lecture-episode-picker-title">讲解全 {totalEpisodes} 集</div>
-        <div className="lecture-episode-scroller">
-          {Array.from({ length: totalEpisodes }, (_, index) => (
-            <button
-              className={`lecture-episode-chip ${index === selectedIndex ? 'active' : ''}`}
-              key={`lecture-episode-${index + 1}`}
-              onClick={() => setSelectedIndex(index)}
-              type="button"
-            >
-              第{index + 1}集
-            </button>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

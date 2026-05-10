@@ -747,6 +747,38 @@
   color: #1f2329;
 }
 
+.content-preview-floating-edit {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  width: 50px;
+  height: 75px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 22px;
+  background: #c8161d;
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(200, 22, 29, 0.24);
+}
+
+.content-preview-floating-edit span {
+  margin-top: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.content-preview-floating-edit:active {
+  transform: scale(0.98);
+}
+
+.content-preview-floating-edit svg {
+  flex: 0 0 auto;
+}
+
 .content-preview-body {
   flex: 1;
   overflow-y: auto;
