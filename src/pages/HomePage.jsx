@@ -584,7 +584,7 @@ const App = () => {
         {isHomeTab && (
           <div
             ref={floatingButtonRef}
-            onClick={() => navigate('/root-data')}
+            onClick={() => navigate('/root-data-draft')}
             onPointerDown={(event) => {
               const buttonRect = floatingButtonRef.current?.getBoundingClientRect();
               if (!buttonRect) return;
