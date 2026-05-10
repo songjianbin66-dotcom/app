@@ -4,6 +4,7 @@ import PlayerPage from './pages/PlayerPage.jsx';
 import RootDataDraftPage from './pages/RootDataDraftPage.jsx';
 import RootDataPage from './pages/RootDataPage.jsx';
 import MyRootDataPage from './pages/MyRootDataPage.jsx';
+import WalletPage from './pages/WalletPage.jsx';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/root-data" element={<RootDataPage />} />
       <Route path="/player" element={<PlayerPage />} />
       <Route path="/my-root-data" element={<MyRootDataPage />} />
+      <Route path="/wallet" element={<WalletPage />} />
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   );
