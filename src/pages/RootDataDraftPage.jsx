@@ -26,7 +26,7 @@ const RootDataDraftPage = () => {
 
   const handleSave = () => {
     showToast('根数据草案已保存');
-    window.setTimeout(() => navigate('/root-data'), 800);
+    // window.setTimeout(() => navigate('/root-data'), 800);
   };
 
   const handleEdit = () => {
