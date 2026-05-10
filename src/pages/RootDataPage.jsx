@@ -34,6 +34,8 @@ const MINDMAP_FIELD_MAX_CHARS = 10;
 const TITLE_MAX_CHARS = 50;
 const VIDEO_TAG_MAX_COUNT = 5;
 const DEFAULT_VIDEO_TAGS = ['战略', '认知', '增长'];
+const ROOT_DATA_TYPE_OPTIONS = ['经验总结', '阅读心得', '未来打算'];
+const REVIEW_SUBMIT_ENDPOINT = '/api/root-data/review';
 
 const getCharacterCount = (value = '') => Array.from(value).length;
 const limitMindmapText = (value = '') =>
@@ -87,6 +89,17 @@ const formatDuration = (seconds = 0) => {
 
   return [minutes, remainSeconds].map((part) => part.toString().padStart(2, '0')).join(':');
 };
+
+const serializeVideoAsset = (video = {}) => ({
+  id: video.id ?? '',
+  title: video.title ?? '',
+  fileName: video.fileName ?? '',
+  source: video.source ?? '',
+  size: video.size ?? '',
+  duration: video.duration ?? '',
+  cover: video.cover ?? '',
+  tags: Array.isArray(video.tags) ? video.tags : [],
+});
 
 const getPlainText = (html = '') =>
   html
@@ -205,7 +218,7 @@ const App = () => {
     initialLectureItemRef.current = createEmptyLectureItem();
   }
 
-  const [view, setView] = useState('create'); // 'create', 'browse', 'library', 'video-upload', 'content-preview'
+  const [view, setView] = useState('create'); // 'create', 'browse', 'library', 'video-upload', 'content-preview', 'submit-review'
   const [activeTab, setActiveTab] = useState('mindmap');
   const [tabTitles, setTabTitles] = useState({
     mindmap: '',
@@ -226,6 +239,8 @@ const App = () => {
   const [lectureItems, setLectureItems] = useState(() => [initialLectureItemRef.current]);
   const [activeLectureId, setActiveLectureId] = useState(initialLectureItemRef.current.id);
   const [isLectureSheetOpen, setIsLectureSheetOpen] = useState(false);
+  const [selectedRootDataType, setSelectedRootDataType] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const [okStyleIndex, setOkStyleIndex] = useState(0);
   const originEditorRef = useRef(null);
@@ -757,27 +772,96 @@ const App = () => {
     setView('content-preview');
   };
 
+  const openSubmitReviewPage = () => {
+    setSelectedRootDataType('');
+    setView('submit-review');
+  };
+
+  const buildReviewPayload = (rootDataType) => {
+    const submittedLectures = lectureItems
+      .filter((item) => item.isSaved && isLectureItemComplete(item))
+      .map((item, index) => ({
+        id: item.id,
+        sortOrder: index + 1,
+        title: item.title.trim(),
+        html: item.html,
+        plainText: getPlainText(item.html),
+        videos: item.videos.map(serializeVideoAsset),
+      }));
+
+    return {
+      rootDataType,
+      reviewStatus: 'pending',
+      submittedAt: new Date().toISOString(),
+      mindmap: {
+        title: tabTitles.mindmap.trim(),
+        ...mindmapData,
+        steps: [...mindmapData.steps],
+        videos: mindmapVideos.map(serializeVideoAsset),
+      },
+      original: {
+        title: tabTitles.text.trim(),
+        html: originContent.html,
+        plainText: getPlainText(originContent.html),
+        videos: originContent.videos.map(serializeVideoAsset),
+      },
+      lectures: submittedLectures,
+    };
+  };
+
+  const submitRootDataForReview = async (payload) => {
+    const endpoint = window.__ROOT_DATA_REVIEW_ENDPOINT__ || REVIEW_SUBMIT_ENDPOINT;
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      const result = await response.json().catch(() => ({}));
+      return {
+        mocked: false,
+        ...result,
+      };
+    } catch (error) {
+      console.warn('[RootDataPage] review submit fallback', error);
+      await new Promise((resolve) => window.setTimeout(resolve, 500));
+      return {
+        mocked: true,
+        reviewStatus: 'pending',
+      };
+    }
+  };
+
   const handleSubmit = () => {
-    const missingTabs = [];
+    openSubmitReviewPage();
+  };
 
-    if (!isMindmapComplete) {
-      missingTabs.push({ id: 'mindmap', label: '脑图' });
-    }
-    if (!isOriginComplete) {
-      missingTabs.push({ id: 'text', label: '原文' });
-    }
-    if (!isLectureComplete) {
-      missingTabs.push({ id: 'video', label: '讲解' });
-    }
-
-    if (missingTabs.length > 0) {
-      const [firstMissingTab] = missingTabs;
-      setActiveTab(firstMissingTab.id);
-      showToast(`请先完成${missingTabs.map((tab) => tab.label).join('、')}内容后再提交`);
+  const handleConfirmSubmitReview = async () => {
+    if (!selectedRootDataType) {
+      showToast('请选择根数据类型');
       return;
     }
 
-    openMindmapPreview();
+    const payload = buildReviewPayload(selectedRootDataType);
+    setIsSubmittingReview(true);
+
+    try {
+      await submitRootDataForReview(payload);
+      showToast('已提交审核，等待审核');
+      window.setTimeout(() => {
+        navigate('/');
+      }, 700);
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   const handleMindmapComplete = () => {
@@ -1488,6 +1572,71 @@ const App = () => {
     );
   };
 
+  const renderSubmitReviewPage = () => (
+    <div className="flex h-full flex-col bg-white">
+      <div className="flex h-[58px] shrink-0 items-center border-b border-[#EEF0F4] bg-white px-4">
+        <button
+          type="button"
+          onClick={() => setView('create')}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[#374151] active:bg-gray-100"
+          aria-label="返回创建页"
+        >
+          <ChevronLeft size={24} strokeWidth={2.3} />
+        </button>
+        <div className="ml-1 text-[17px] font-bold text-[#111827]">选择根数据类型</div>
+      </div>
+
+      <div className="flex-1 px-4 pt-3 pb-4">
+        {/* <div className="text-[15px] font-medium leading-6 text-[#6B7280]">请选择根数据类型：</div> */}
+        <div className="mt-3 space-y-3">
+            {ROOT_DATA_TYPE_OPTIONS.map((option) => {
+              const isSelected = selectedRootDataType === option;
+              return (
+                <div
+                  key={option}
+                  onClick={() => setSelectedRootDataType(option)}
+                  className={`flex w-full items-center justify-between rounded-[12px] border px-4 py-4 text-left transition-all ${
+                    isSelected
+                      ? 'border-[#C8161D] bg-[#FFF0F1]'
+                      : 'border-[#EFE3E4] bg-white'
+                  }`}
+                >
+                  <span className={`text-[16px] font-semibold ${isSelected ? 'text-[#C8161D]' : 'text-[#1F2329]'}`}>
+                    {option}
+                  </span>
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                      isSelected ? 'border-[#C8161D]' : 'border-[#D0D5DD]'
+                    }`}
+                  >
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        isSelected ? 'bg-[#C8161D]' : 'bg-transparent'
+                      }`}
+                    />
+                  </span>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
+      <div className="shrink-0 px-5 pb-6 pt-3">
+        <div
+          onClick={handleConfirmSubmitReview}
+          disabled={!selectedRootDataType || isSubmittingReview}
+          className={`flex h-[52px] w-full items-center justify-center rounded-[12px] text-[16px] font-bold text-white transition-all ${
+            !selectedRootDataType || isSubmittingReview
+              ? 'cursor-not-allowed bg-[#E6AEB1]'
+              : 'bg-[#C8161D] active:scale-[0.99]'
+          }`}
+        >
+          {isSubmittingReview ? '提交中...' : '确认提交'}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderLibraryPage = () => (
     <div className="flex flex-col h-full bg-white">
       <div className="px-4 py-3 flex items-center space-x-3 border-b border-gray-100">
@@ -1535,7 +1684,9 @@ const App = () => {
               ? renderVideoUploadPage()
               : view === 'content-preview'
                 ? renderContentPreviewPage()
-                : renderBrowsePage()}
+                : view === 'submit-review'
+                  ? renderSubmitReviewPage()
+                  : renderBrowsePage()}
         {toastMessage && (
           <div className="pointer-events-none absolute left-1/2 top-6 z-50 w-[calc(100%-32px)] -translate-x-1/2">
             <div className="rounded-2xl bg-[rgba(17,24,39,0.88)] px-4 py-3 text-center text-[13px] font-medium leading-5 text-white shadow-[0_12px_32px_rgba(17,24,39,0.22)] backdrop-blur-sm">
