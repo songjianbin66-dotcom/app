@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, Eye, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, Eye, Heart, MessageSquare, Pencil, Star, Trash2 } from 'lucide-react';
+import { TiArrowForward } from 'react-icons/ti';
 import {
-  DataCard,
   VIDEO_COVER_SETS,
   PLAYER_ROOT_IDS,
   PLAYER_SECTION_KEY_BY_CATEGORY,
@@ -10,6 +10,240 @@ import {
   getVideoTitle,
   SHARED_THEME_STYLES,
 } from './HomePage';
+
+const TOP_LEFT_CATEGORY_BADGE_CLASS = 'absolute left-0 top-0 z-10 rounded-br-lg bg-[#000000]/50 px-3 py-1 text-[10px] font-bold text-white shadow-lg';
+
+const parseCountLabel = (value) => {
+  if (typeof value === 'number') return value;
+  const normalizedValue = String(value).trim().toLowerCase();
+  const match = normalizedValue.match(/^(\d+(?:\.\d+)?)([kw])?$/);
+  if (!match) {
+    const numericValue = Number.parseInt(normalizedValue.replace(/[^\d]/g, ''), 10);
+    return Number.isNaN(numericValue) ? 0 : numericValue;
+  }
+  const [, amount, unit] = match;
+  const multiplier = unit === 'w' ? 10000 : unit === 'k' ? 1000 : 1;
+  return Math.round(Number.parseFloat(amount) * multiplier);
+};
+
+const formatCountLabel = (value) => {
+  if (value >= 10000) {
+    const scaledValue = value >= 100000 ? (value / 10000).toFixed(0) : (value / 10000).toFixed(1);
+    return `${scaledValue.replace(/\.0$/, '')}w`;
+  }
+  if (value >= 1000) {
+    const scaledValue = value >= 10000 ? (value / 1000).toFixed(0) : (value / 1000).toFixed(1);
+    return `${scaledValue.replace(/\.0$/, '')}k`;
+  }
+  return String(value);
+};
+
+const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
+  <button
+    type="button"
+    className="snap-item w-[200px] h-[260px] snap-center relative rounded-[10px] overflow-hidden bg-[#1A1D21] flex-shrink-0 transition-all duration-300 shadow-md text-left cursor-pointer"
+    aria-label={`播放${video.category}视频，来自${video.agent}`}
+    onClick={onOpenPlayer}
+  >
+    <img
+      src={video.cover}
+      alt={`${video.category}视频封面`}
+      className="absolute inset-0 h-full w-full object-cover"
+      loading="lazy"
+    />
+    <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-black/55" />
+    <div className={TOP_LEFT_CATEGORY_BADGE_CLASS}>{video.category}</div>
+    <div className="absolute right-0 top-0 z-10 rounded-bl-lg theme-bg px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+      {video.agent}
+    </div>
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-500 ${isActive ? 'bg-white/40 scale-110' : 'bg-white/20'}`}>
+        <div className="w-0 h-0 border-t-[7px] border-t-transparent border-l-[11px] border-l-white border-b-[7px] border-b-transparent ml-1" />
+      </div>
+    </div>
+    <div className="absolute bottom-2.5 right-2.5 bg-black/55 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm">{video.duration}</div>
+  </button>
+);
+
+const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = null }) => {
+  const scrollRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(1);
+  const [videoMetrics, setVideoMetrics] = useState(() =>
+    Object.fromEntries(
+      data.videos.map((video) => [
+        video.id,
+        {
+          likes: parseCountLabel(video.likes),
+          favorites: parseCountLabel(video.favorites),
+          liked: false,
+          favorited: false,
+        },
+      ])
+    )
+  );
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const items = container.querySelectorAll('.snap-item');
+    const target = items[1];
+    if (target) {
+      container.scrollLeft = target.offsetLeft - (container.offsetWidth - target.offsetWidth) / 2;
+    }
+  }, []);
+
+  const currentVideo = data.videos[activeIndex] ?? data.videos[0];
+  const currentVideoMetric = videoMetrics[currentVideo.id] ?? {
+    likes: parseCountLabel(currentVideo.likes),
+    favorites: parseCountLabel(currentVideo.favorites),
+    liked: false,
+    favorited: false,
+  };
+
+  const openCurrentVideo = (action = 'play') => {
+    onOpenPlayer?.({
+      action,
+      rootId: data.playerRootId,
+      sectionKey: currentVideo.playerSectionKey,
+      videoId: currentVideo.playerVideoId,
+    });
+  };
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const container = scrollRef.current;
+      const scrollLeft = container.scrollLeft;
+      const containerCenter = scrollLeft + container.offsetWidth / 2;
+      const items = container.querySelectorAll('.snap-item');
+      let closestIdx = 0;
+      let minDiff = Infinity;
+      items.forEach((item, index) => {
+        const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+        const diff = Math.abs(itemCenter - containerCenter);
+        if (diff < minDiff) { minDiff = diff; closestIdx = index; }
+      });
+      if (closestIdx !== activeIndex) setActiveIndex(closestIdx);
+    }
+  };
+
+  const handleToggleMetric = (videoId, metricKey) => {
+    setVideoMetrics((prev) => {
+      const currentMetric = prev[videoId];
+      if (!currentMetric) return prev;
+      const statusKey = metricKey === 'likes' ? 'liked' : 'favorited';
+      const nextActive = !currentMetric[statusKey];
+      const delta = nextActive ? 1 : -1;
+      return {
+        ...prev,
+        [videoId]: {
+          ...currentMetric,
+          [metricKey]: Math.max(0, currentMetric[metricKey] + delta),
+          [statusKey]: nextActive,
+        },
+      };
+    });
+  };
+
+  return (
+    <article className="bg-white py-4">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar gap-3 px-5"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {data.videos.map((v, idx) => (
+          <VideoSlide
+            key={v.id}
+            video={v}
+            isActive={activeIndex === idx}
+            onOpenPlayer={() => {
+              const selectedVideo = data.videos[idx] ?? currentVideo;
+              onOpenPlayer?.({
+                action: 'play',
+                rootId: data.playerRootId,
+                sectionKey: selectedVideo.playerSectionKey,
+                videoId: selectedVideo.playerVideoId,
+              });
+            }}
+          />
+        ))}
+      </div>
+      <div className="px-4 pt-3">
+        <h3 className="text-[15px] font-bold leading-[1.4] line-clamp-2 mb-2 text-[#1F2329]">{currentVideo.title}</h3>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+            {data.tags.join(' · ')}
+          </span>
+          {data.updatedAt && (
+            <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+              更新时间：{data.updatedAt}
+            </span>
+          )}
+        </div>
+        {!hideAuthor && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-[#F5F6F8]">
+              <img src={data.authorAvatar} alt={data.author} className="h-full w-full object-cover" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[13px] font-medium leading-tight text-[#646A73]">{data.author}</span>
+              <span className="inline-flex w-fit items-center rounded-[4px] bg-[#FDEBEC] px-2 py-0.5 text-[8px] font-medium leading-none text-[#A4151B]">
+                {data.authorRole}
+              </span>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center w-full text-[#8F959E]">
+          <button
+            type="button"
+            aria-label="点赞"
+            onClick={() => handleToggleMetric(currentVideo.id, 'likes')}
+            className={`flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 ${currentVideoMetric.liked ? 'theme-text' : 'text-[#8F959E]'}`}
+          >
+            <Heart size={18} fill={currentVideoMetric.liked ? 'currentColor' : 'none'} />
+            <span className="text-[14px] tabular-nums">{formatCountLabel(currentVideoMetric.likes)}</span>
+          </button>
+          <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
+          <button
+            type="button"
+            aria-label="收藏"
+            onClick={() => handleToggleMetric(currentVideo.id, 'favorites')}
+            className={`flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 ${currentVideoMetric.favorited ? 'theme-text' : 'text-[#8F959E]'}`}
+          >
+            <Star size={18} fill={currentVideoMetric.favorited ? 'currentColor' : 'none'} />
+            <span className="text-[14px] tabular-nums">{formatCountLabel(currentVideoMetric.favorites)}</span>
+          </button>
+          <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
+          <button
+            type="button"
+            aria-label="评论"
+            onClick={() => openCurrentVideo('comment')}
+            className="flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 active:text-[#646A73]"
+          >
+            <MessageSquare size={18} />
+            <span className="text-[14px]">{currentVideo.comments}</span>
+          </button>
+          <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
+          <button
+            type="button"
+            aria-label="分享"
+            onClick={() => openCurrentVideo('share')}
+            className="flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 active:text-[#646A73]"
+          >
+            <TiArrowForward size={20} />
+            <span className="text-[14px]">{currentVideo.shares}</span>
+          </button>
+        </div>
+        {manageBar && (
+          <div className="mt-3 border-t border-[#F0F1F5] pt-3">
+            {manageBar}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+};
 
 const INITIAL_COUNT = 4;
 const LOAD_STEP = 4;
@@ -22,6 +256,7 @@ const buildMyRootData = () =>
       playerRootId,
       status: i % 2 === 0 ? '审核中' : '审核通过',
       tags: i % 2 === 0 ? ['企业策划', '转型升级'] : ['数智链', '实战案例'],
+      updatedAt: i % 2 === 0 ? '2015-06-12' : '2018-03-08',
       author: '张小飞',
       authorRole: '创始链主',
       authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&h=120&fit=crop',

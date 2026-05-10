@@ -166,6 +166,7 @@ const App = () => {
       id: i + 1,
       playerRootId,
       tags: i % 2 === 0 ? ['企业策划', '转型升级'] : ['数智链', '实战案例'],
+      updatedAt: i % 2 === 0 ? '2015-06-12' : '2018-03-08',
       author: '史宪文',
       authorRole: i % 2 === 0 ? '创始链主' : '指导师',
       authorAvatar: i % 2 === 0
@@ -962,66 +963,72 @@ export const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = n
       
       <div className="px-4 pt-3">
         <h3 className="text-[15px] font-bold leading-[1.4] line-clamp-2 mb-2 text-[#1F2329]">{currentVideo.title}</h3>
-        <div className="mb-2 text-[11px] font-medium tracking-[0.01em] text-gray-400">
-          {data.tags.join(' · ')}
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+            {data.tags.join(' · ')}
+          </span>
+          {data.updatedAt && (
+            <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+              更新时间：{data.updatedAt}
+            </span>
+          )}
         </div>
-        {!hideAuthor && (
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-full  overflow-hidden bg-[#F5F6F8]">
-              <img src={data.authorAvatar} alt={data.author} className="h-full w-full object-cover" />
+        <div className="flex items-center justify-between">
+          {!hideAuthor && (
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-full  overflow-hidden bg-[#F5F6F8]">
+                <img src={data.authorAvatar} alt={data.author} className="h-full w-full object-cover" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[13px] font-medium leading-tight text-[#646A73]">{data.author}</span>
+                <span className="inline-flex w-fit items-center rounded-[4px] bg-[#FDEBEC] px-2 py-0.5 text-[8px] font-medium leading-none text-[#A4151B]">
+                  {data.authorRole}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[13px] font-medium leading-tight text-[#646A73]">{data.author}</span>
-              <span className="inline-flex w-fit items-center rounded-[4px] bg-[#FDEBEC] px-2 py-0.5 text-[8px] font-medium leading-none text-[#A4151B]">
-                {data.authorRole}
-              </span>
-            </div>
-          </div>
-        )}
-        <div className="flex items-center w-full text-[#8F959E]">
+          )}
+          <div className="flex items-center gap-4 text-[#8F959E]">
             <button
               type="button"
               aria-label="点赞"
               onClick={() => handleToggleMetric(currentVideo.id, 'likes')}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 ${currentVideoMetric.liked ? 'theme-text' : 'text-[#8F959E]'}`}
+              className={`inline-flex min-w-[52px] items-center gap-1 transition-colors duration-200 ${currentVideoMetric.liked ? 'theme-text' : 'text-[#8F959E]'}`}
             >
-              <Heart size={18} fill={currentVideoMetric.liked ? 'currentColor' : 'none'} />
-              <span className="text-[14px] tabular-nums">
+              <Heart size={14} fill={currentVideoMetric.liked ? 'currentColor' : 'none'} />
+              <span className="w-[30px] text-left text-[12px] tabular-nums">
                 {formatCountLabel(currentVideoMetric.likes)}
               </span>
             </button>
-            <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
             <button
               type="button"
               aria-label="收藏"
               onClick={() => handleToggleMetric(currentVideo.id, 'favorites')}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 ${currentVideoMetric.favorited ? 'theme-text' : 'text-[#8F959E]'}`}
+              className={`inline-flex min-w-[52px] items-center gap-1 transition-colors duration-200 ${currentVideoMetric.favorited ? 'theme-text' : 'text-[#8F959E]'}`}
             >
-              <Star size={18} fill={currentVideoMetric.favorited ? 'currentColor' : 'none'} />
-              <span className="text-[14px] tabular-nums">
+              <Star size={14} fill={currentVideoMetric.favorited ? 'currentColor' : 'none'} />
+              <span className="w-[30px] text-left text-[12px] tabular-nums">
                 {formatCountLabel(currentVideoMetric.favorites)}
               </span>
             </button>
-            <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
             <button
               type="button"
               aria-label="评论"
               onClick={() => openCurrentVideo('comment')}
-              className="flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 active:text-[#646A73]"
+              className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
             >
-              <MessageSquare size={18} />
-              <span className="text-[14px]">{currentVideo.comments}</span>
+              <MessageSquare size={14} />
+              <span className="text-[12px]">{currentVideo.comments}</span>
             </button>
-            <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
             <button
               type="button"
               aria-label="分享"
               onClick={() => openCurrentVideo('share')}
-              className="flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 active:text-[#646A73]"
+              className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
             >
-              <TiArrowForward size={20} />
-              <span className="text-[14px]">{currentVideo.shares}</span>
+              <TiArrowForward size={16} />
+              <span className="text-[12px]">{currentVideo.shares}</span>
             </button>
+          </div>
         </div>
         {manageBar && (
           <div className="mt-3 border-t border-[#F0F1F5] pt-3">
