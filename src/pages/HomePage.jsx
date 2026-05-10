@@ -157,8 +157,10 @@ const App = () => {
   };
 
   // 1. 根数据 - 10 条
+  const ROOT_DATA_AGENTS = ['经验总结', '阅读心得', '未来打算'];
   const cardData = Array.from({ length: 10 }).map((_, i) => {
     const playerRootId = PLAYER_ROOT_IDS[i % PLAYER_ROOT_IDS.length];
+    const agent = ROOT_DATA_AGENTS[i % ROOT_DATA_AGENTS.length];
 
     return {
       id: i + 1,
@@ -176,7 +178,7 @@ const App = () => {
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.脑图,
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.脑图),
           title: getVideoTitle(i, '脑图'),
-          agent: '经验总结',
+          agent,
           duration: '01:20',
           likes: i % 2 === 0 ? '1.2k' : '936',
           favorites: i % 2 === 0 ? '568' : '421',
@@ -190,7 +192,7 @@ const App = () => {
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.讲解,
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.讲解),
           title: getVideoTitle(i, '讲解'),
-          agent: '未来打算',
+          agent,
           duration: '03:45',
           likes: i % 2 === 0 ? '1.5k' : '1.1k',
           favorites: i % 2 === 0 ? '826' : '644',
@@ -204,7 +206,7 @@ const App = () => {
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY.原文,
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY.原文),
           title: getVideoTitle(i, '原文'),
-          agent: '阅读心得',
+          agent,
           duration: '05:15',
           likes: i % 2 === 0 ? '978' : '742',
           favorites: i % 2 === 0 ? '435' : '389',
