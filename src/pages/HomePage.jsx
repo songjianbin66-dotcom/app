@@ -15,7 +15,8 @@ import {
   User,
   Zap,
   ArrowLeft,
-  X
+  X,
+  Bell
 } from 'lucide-react';
 import { TiArrowForward } from 'react-icons/ti';
 
@@ -132,6 +133,7 @@ const App = () => {
   const [bottomTab, setBottomTab] = useState('首页');
   const [isSearchOpen, setIsSearchOpen] = useState(() => Boolean(location.state?.openSearch));
   const [isPromoVisible, setIsPromoVisible] = useState(true);
+  const [notificationCount, setNotificationCount] = useState(3);
   const [visibleRootDataCount, setVisibleRootDataCount] = useState(INITIAL_ROOT_DATA_COUNT);
   const [floatingButtonPos, setFloatingButtonPos] = useState({ x: 0, y: 0 });
   const phoneFrameRef = useRef(null);
@@ -425,7 +427,19 @@ const App = () => {
             {/* <Cloud size={14} className="theme-text fill-current" /> */}
             <span className="text-[15px] font-bold tracking-tight">数智链</span>
           </div>
-          <div className="w-[18px]" /> 
+          <button
+            type="button"
+            aria-label={notificationCount > 0 ? `${notificationCount}条新消息` : '消息通知'}
+            onClick={() => setNotificationCount(0)}
+            className="relative flex items-center justify-center w-[32px] h-[32px] rounded-full cursor-pointer active:bg-[#F5F6F8] transition-colors"
+          >
+            <Bell size={18} className="text-[#646A73]" />
+            {notificationCount > 0 && (
+              <span className="absolute -top-[2px] -right-[2px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full bg-[#C8161D] text-white text-[10px] font-bold leading-none px-[3px]">
+                {notificationCount > 99 ? '99+' : notificationCount}
+              </span>
+            )}
+          </button>
         </header>
 
         {/* 主体内容 */}

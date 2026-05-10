@@ -107,9 +107,9 @@ const ProfilePage = () => {
             { icon: <Wallet size={18} />, label: '我的钱包', sub: '¥8,560.24', onClick: () => navigate('/wallet') },
             { icon: <Database size={18} />, label: '根数据管理', sub: '42,851 条', onClick: () => navigate('/my-root-data') },
             { icon: <Network size={18} />, label: '指导关系管理', sub: '' },
-            { icon: <ShieldCheck size={18} />, label: '数据存证', sub: '124 项' },
+            // { icon: <ShieldCheck size={18} />, label: '数据存证', sub: '124 项' },
             { icon: <Briefcase size={18} />, label: '团队管理', sub: '' },
-            { icon: <Bell size={18} />, label: '消息中心', sub: '2 条未读' },
+            // { icon: <Bell size={18} />, label: '消息中心', sub: '2 条未读' },
             { icon: <HelpCircle size={18} />, label: '帮助与反馈', sub: '' },
             { icon: <Settings size={18} />, label: '设置中心', sub: '' },
           ].map((item, idx) => (

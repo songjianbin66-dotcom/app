@@ -26,6 +26,7 @@ const RootDataDraftPage = () => {
 
   const handleSave = () => {
     showToast('根数据草案已保存');
+    window.setTimeout(() => navigate('/root-data'), 800);
   };
 
   const handleEdit = () => {
@@ -51,14 +52,15 @@ const RootDataDraftPage = () => {
           </button>
           <div className="text-[17px] font-bold text-[#111827]">根数据草案</div>
           <div className="flex items-center gap-2">
-            {/* <div
-              onClick={handleSave}
-              className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
+            <div
               role="button"
               tabIndex={0}
+              onClick={() => navigate('/root-data-submit-success')}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/root-data-submit-success'); }}
+              className="rounded-full bg-[#C8161D] px-4 py-1.5 text-[10px] font-medium text-white transition-all"
             >
-              提交
-            </div> */}
+              提交初审
+            </div>
           </div>
         </div>
 
@@ -81,20 +83,13 @@ const RootDataDraftPage = () => {
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
         >
           <div className="flex gap-3">
-            {/* <div
+            <button
               type="button"
-              onClick={handleEdit}
-              className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white "
+              onClick={handleSave}
+              className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white active:opacity-80"
             >
-              修改
-            </div> */}
-            <div
-              type="button"
-              onClick={handleContinueCreate}
-              className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white "
-            >
-              提交
-            </div>
+              保存
+            </button>
           </div>
         </div>
 

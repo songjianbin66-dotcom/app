@@ -5,6 +5,7 @@ import RootDataDraftPage from './pages/RootDataDraftPage.jsx';
 import RootDataPage from './pages/RootDataPage.jsx';
 import MyRootDataPage from './pages/MyRootDataPage.jsx';
 import WalletPage from './pages/WalletPage.jsx';
+import RootDataSubmitSuccessPage from './pages/RootDataSubmitSuccessPage.jsx';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/root-data-draft" element={<RootDataDraftPage />} />
       <Route path="/root-data" element={<RootDataPage />} />
+      <Route path="/root-data-submit-success" element={<RootDataSubmitSuccessPage />} />
       <Route path="/player" element={<PlayerPage />} />
       <Route path="/my-root-data" element={<MyRootDataPage />} />
       <Route path="/wallet" element={<WalletPage />} />
