@@ -31,12 +31,15 @@ const DEFAULT_VIDEO_COVERS = [
   'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80',
 ];
 const MINDMAP_FIELD_MAX_CHARS = 10;
+const TITLE_MAX_CHARS = 50;
 const VIDEO_TAG_MAX_COUNT = 5;
 const DEFAULT_VIDEO_TAGS = ['战略', '认知', '增长'];
 
 const getCharacterCount = (value = '') => Array.from(value).length;
 const limitMindmapText = (value = '') =>
   Array.from(value).slice(0, MINDMAP_FIELD_MAX_CHARS).join('');
+const limitTitleText = (value = '') =>
+  Array.from(value.replace(/[\r\n]+/g, '')).slice(0, TITLE_MAX_CHARS).join('');
 const getInlineInputWidth = (value = '') => `${Math.max(getCharacterCount(value) + 1, 4)}em`;
 
 const getDefaultVideoCover = (seed = 0) => DEFAULT_VIDEO_COVERS[Math.abs(seed) % DEFAULT_VIDEO_COVERS.length];
@@ -151,6 +154,49 @@ const buildFakeLecturePreviewData = (count = 1) =>
       },
     };
   });
+
+function TitleTextarea({ value, onChange, placeholder }) {
+  const textareaRef = useRef(null);
+
+  const syncTextareaHeight = () => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      ref={textareaRef}
+      rows={1}
+      value={value}
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value)}
+      onInput={syncTextareaHeight}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+        }
+      }}
+      className="min-h-[29px] w-full resize-none overflow-hidden border-none bg-transparent p-0 text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
+    />
+  );
+}
 
 const App = () => {
   const navigate = useNavigate();
@@ -676,17 +722,23 @@ const App = () => {
   };
 
   const updateTabTitle = (tab, value) => {
+    const nextValue = limitTitleText(value);
+
+    if (getCharacterCount(value.replace(/[\r\n]+/g, '')) > TITLE_MAX_CHARS) {
+      showToast(`标题最多支持${TITLE_MAX_CHARS}个汉字`);
+    }
+
     if (tab === 'video') {
       updateLectureItem(activeLectureItem.id, (item) => ({
         ...item,
-        title: value.slice(0, 100),
+        title: nextValue,
       }));
       return;
     }
 
     setTabTitles((prev) => ({
       ...prev,
-      [tab]: value.slice(0, 100),
+      [tab]: nextValue,
     }));
   };
 
@@ -1056,12 +1108,10 @@ const App = () => {
         {activeTab === 'mindmap' && (
           <div className="flex min-h-full flex-col gap-4">
             <div>
-              <input
-                type="text"
+              <TitleTextarea
                 placeholder="请输入脑图标题"
-                className="min-w-0 flex-1 border-none bg-transparent text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
                 value={tabTitles.mindmap}
-                onChange={(e) => updateTabTitle('mindmap', e.target.value)}
+                onChange={(value) => updateTabTitle('mindmap', value)}
               />
             </div>
             <div className="px-1 py-2 text-[16px] leading-8 text-gray-800">
@@ -1122,12 +1172,10 @@ const App = () => {
           <ContentTabPanel
             beforeEditor={(
               <div>
-                <input
-                  type="text"
+                <TitleTextarea
                   placeholder="请输入原文标题"
-                  className="min-w-0 w-full border-none bg-transparent text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
                   value={tabTitles.text}
-                  onChange={(e) => updateTabTitle('text', e.target.value)}
+                  onChange={(value) => updateTabTitle('text', value)}
                 />
               </div>
             )}
@@ -1167,12 +1215,10 @@ const App = () => {
             editorKey={activeLectureItem.id}
             beforeEditor={(
               <div>
-                <input
-                  type="text"
+                <TitleTextarea
                   placeholder="请输入讲解标题"
-                  className="min-w-0 w-full border-none bg-transparent text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
                   value={activeLectureItem.title}
-                  onChange={(e) => updateTabTitle('video', e.target.value)}
+                  onChange={(value) => updateTabTitle('video', value)}
                 />
               </div>
             )}
@@ -1373,6 +1419,16 @@ const App = () => {
           border-color: rgba(200, 22, 29, 0.55);
           background: #FCEAEC;
           color: ${THEME_COLOR};
+        }
+        .root-lecture-choice {
+          align-items: start;
+        }
+        .root-lecture-choice .video-choice-title {
+          overflow: visible;
+          text-overflow: initial;
+          white-space: normal;
+          word-break: break-all;
+          line-height: 1.5;
         }
         .root-lecture-choice.active .video-choice-index {
           background: rgba(200, 22, 29, 0.12);
