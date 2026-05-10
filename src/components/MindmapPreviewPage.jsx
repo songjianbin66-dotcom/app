@@ -1,5 +1,5 @@
-import React from 'react';
-import { ChevronLeft } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { ChevronLeft, Pencil } from 'lucide-react';
 
 const relationCanvas = {
   width: 554,
@@ -108,13 +108,103 @@ export default function MindmapPreviewPage({
   templateOptions = [],
   selectedTemplateIndex = 0,
   onSelectTemplate,
-  showPrimaryAction = false,
-  primaryActionLabel = '保存草稿',
+  onSaveTemplate,
+  showFloatingEdit = true,
 }) {
   const { contentSlots, stepSlots } = createRelationPreviewSlots(mindmapData);
 
+  const containerRef = useRef(null);
+  const floatingButtonRef = useRef(null);
+  const dragStateRef = useRef({
+    isDragging: false,
+    pointerOffsetX: 0,
+    pointerOffsetY: 0,
+    startX: 0,
+    startY: 0,
+    suppressClick: false,
+  });
+  const [floatingButtonPos, setFloatingButtonPos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const updatePosition = () => {
+      const container = containerRef.current;
+      const button = floatingButtonRef.current;
+      if (!container || !button) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      const buttonWidth = button.offsetWidth || 50;
+      const buttonHeight = button.offsetHeight || 75;
+
+      setFloatingButtonPos((current) => {
+        const hasInitialPosition = current.x !== 0 || current.y !== 0;
+        const defaultX = containerWidth - buttonWidth - 14;
+        const defaultY = containerHeight - buttonHeight - 18;
+
+        if (!hasInitialPosition) {
+          return { x: defaultX, y: defaultY };
+        }
+
+        return {
+          x: Math.min(Math.max(12, current.x), containerWidth - buttonWidth - 12),
+          y: Math.min(Math.max(72, current.y), containerHeight - buttonHeight - 12),
+        };
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, []);
+
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      if (!dragStateRef.current.isDragging) return;
+
+      const container = containerRef.current;
+      const button = floatingButtonRef.current;
+      if (!container || !button) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const buttonWidth = button.offsetWidth;
+      const buttonHeight = button.offsetHeight;
+      const nextX = event.clientX - containerRect.left - dragStateRef.current.pointerOffsetX;
+      const nextY = event.clientY - containerRect.top - dragStateRef.current.pointerOffsetY;
+      const movedDistance = Math.hypot(
+        event.clientX - dragStateRef.current.startX,
+        event.clientY - dragStateRef.current.startY
+      );
+
+      if (movedDistance > 4) {
+        dragStateRef.current.suppressClick = true;
+      }
+
+      setFloatingButtonPos({
+        x: Math.min(Math.max(12, nextX), containerRect.width - buttonWidth - 12),
+        y: Math.min(Math.max(72, nextY), containerRect.height - buttonHeight - 12),
+      });
+    };
+
+    const handlePointerUp = () => {
+      dragStateRef.current.isDragging = false;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, []);
+
+  const handleTemplateSelect = (index) => {
+    onSelectTemplate?.(index);
+    onSaveTemplate?.(index);
+  };
+
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden relative">
+    <div ref={containerRef} className="flex flex-col h-full bg-white overflow-hidden relative">
       <div className="px-4 py-3 flex items-center border-b border-gray-100 shrink-0 bg-white z-20">
         <div className="flex items-center space-x-2">
           <button
@@ -208,14 +298,14 @@ export default function MindmapPreviewPage({
           </section>
 
           {showTemplatePicker && templateOptions.length > 0 ? (
-            <section className="bg-white pb-2">
+            <section className="bg-white pb-24">
               <div className="mb-3 text-[12px] font-bold text-[#8F959E]">脑图模版</div>
               <div className="grid grid-cols-5 gap-1.5">
                 {templateOptions.map((style, index) => (
                   <button
                     key={style.name}
                     type="button"
-                    onClick={() => onSelectTemplate?.(index)}
+                    onClick={() => handleTemplateSelect(index)}
                     className={`min-w-0 rounded-[10px] border p-1 text-center transition-all ${
                       selectedTemplateIndex === index
                         ? 'bg-[#FDEBEC] border-[#C8161D] shadow-[0_6px_16px_rgba(200,22,29,0.15)]'
@@ -238,16 +328,42 @@ export default function MindmapPreviewPage({
               </div>
             </section>
           ) : null}
-
-          {showPrimaryAction ? (
-            <div className="pb-4">
-              <div className="w-full py-3 bg-[#C8161D] text-white rounded-xl font-bold flex items-center justify-center text-[13px]">
-                <span>{primaryActionLabel}</span>
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
+
+      {showFloatingEdit ? <button
+        ref={floatingButtonRef}
+        type="button"
+        onClick={(event) => {
+          if (dragStateRef.current.suppressClick) {
+            event.preventDefault();
+            dragStateRef.current.suppressClick = false;
+            return;
+          }
+
+          onBack?.();
+        }}
+        onPointerDown={(event) => {
+          const buttonRect = floatingButtonRef.current?.getBoundingClientRect();
+          if (!buttonRect) return;
+
+          dragStateRef.current.isDragging = true;
+          dragStateRef.current.pointerOffsetX = event.clientX - buttonRect.left;
+          dragStateRef.current.pointerOffsetY = event.clientY - buttonRect.top;
+          dragStateRef.current.startX = event.clientX;
+          dragStateRef.current.startY = event.clientY;
+          dragStateRef.current.suppressClick = false;
+        }}
+        className="content-preview-floating-edit"
+        aria-label="编辑"
+        style={{
+          left: `${floatingButtonPos.x}px`,
+          top: `${floatingButtonPos.y}px`,
+        }}
+      >
+        <Pencil size={18} strokeWidth={2.4} />
+        <span>编辑</span>
+      </button> : null}
 
       <style>{`
         .root-preview-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }

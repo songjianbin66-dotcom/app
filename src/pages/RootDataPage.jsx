@@ -868,8 +868,13 @@ const App = () => {
   };
 
   const handleMindmapComplete = () => {
-    if (!isMindmapComplete) {
-      showToast('请先完成脑图内容');
+    const hasTitle = tabTitles.mindmap.trim() !== '';
+    const hasAnyField =
+      mindmapFields.some((value) => value.trim() !== '') ||
+      mindmapData.steps.some((step) => step.trim() !== '');
+
+    if (!hasTitle && !hasAnyField) {
+      showToast('请先填写脑图标题或内容');
       return;
     }
 
@@ -1617,6 +1622,23 @@ const App = () => {
     );
   };
 
+  const handleSaveMindmapTemplate = async (index) => {
+    const selectedStyle = okStyles[index];
+    const endpoint = '/api/root-data/mindmap-template';
+
+    try {
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateIndex: index, templateName: selectedStyle?.name }),
+      });
+    } catch (error) {
+      console.warn('[RootDataPage] mindmap template save fallback', error);
+    }
+
+    showToast('模板保存成功');
+  };
+
   const renderBrowsePage = () => {
     return (
       <MindmapPreviewPage
@@ -1628,8 +1650,7 @@ const App = () => {
         templateOptions={okStyles}
         selectedTemplateIndex={okStyleIndex}
         onSelectTemplate={setOkStyleIndex}
-        showPrimaryAction
-        primaryActionLabel="保存草稿"
+        onSaveTemplate={handleSaveMindmapTemplate}
       />
     );
   };

@@ -877,6 +877,7 @@ function App() {
             section={previewSection}
             sectionKey={preview.sectionKey}
             videoIndex={previewVideoIndex}
+            showFloatingEdit={false}
           />
         ) : null}
       </main>

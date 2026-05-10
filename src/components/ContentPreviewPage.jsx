@@ -134,6 +134,7 @@ export default function ContentPreviewPage({
   sectionKey,
   videoIndex = 0,
   showEpisodePicker = true,
+  showFloatingEdit = true,
 }) {
   const normalizedSectionKey = normalizeSectionKey(sectionKey);
   const previewPageRef = useRef(null);
@@ -238,6 +239,7 @@ export default function ContentPreviewPage({
           mindmapData={section.content}
           okStyle={okStampStyle}
           onBack={onClose}
+          showFloatingEdit={false}
         />
       ) : null}
       {normalizedSectionKey !== 'mindmap' ? (
@@ -270,39 +272,41 @@ export default function ContentPreviewPage({
             ) : null}
           </div>
 
-          <button
-            ref={floatingEditButtonRef}
-            type="button"
-            onClick={(event) => {
-              if (dragStateRef.current.suppressClick) {
-                event.preventDefault();
+          {showFloatingEdit ? (
+            <button
+              ref={floatingEditButtonRef}
+              type="button"
+              onClick={(event) => {
+                if (dragStateRef.current.suppressClick) {
+                  event.preventDefault();
+                  dragStateRef.current.suppressClick = false;
+                  return;
+                }
+
+                onClose();
+              }}
+              onPointerDown={(event) => {
+                const buttonRect = floatingEditButtonRef.current?.getBoundingClientRect();
+                if (!buttonRect) return;
+
+                dragStateRef.current.isDragging = true;
+                dragStateRef.current.pointerOffsetX = event.clientX - buttonRect.left;
+                dragStateRef.current.pointerOffsetY = event.clientY - buttonRect.top;
+                dragStateRef.current.startX = event.clientX;
+                dragStateRef.current.startY = event.clientY;
                 dragStateRef.current.suppressClick = false;
-                return;
-              }
-
-              onClose();
-            }}
-            onPointerDown={(event) => {
-              const buttonRect = floatingEditButtonRef.current?.getBoundingClientRect();
-              if (!buttonRect) return;
-
-              dragStateRef.current.isDragging = true;
-              dragStateRef.current.pointerOffsetX = event.clientX - buttonRect.left;
-              dragStateRef.current.pointerOffsetY = event.clientY - buttonRect.top;
-              dragStateRef.current.startX = event.clientX;
-              dragStateRef.current.startY = event.clientY;
-              dragStateRef.current.suppressClick = false;
-            }}
-            className="content-preview-floating-edit"
-            aria-label="编辑"
-            style={{
-              left: `${floatingEditButtonPos.x}px`,
-              top: `${floatingEditButtonPos.y}px`,
-            }}
-          >
-            <Pencil size={18} strokeWidth={2.4} />
-            <span>编辑</span>
-          </button>
+              }}
+              className="content-preview-floating-edit"
+              aria-label="编辑"
+              style={{
+                left: `${floatingEditButtonPos.x}px`,
+                top: `${floatingEditButtonPos.y}px`,
+              }}
+            >
+              <Pencil size={18} strokeWidth={2.4} />
+              <span>编辑</span>
+            </button>
+          ) : null}
         </>
       ) : null}
     </section>
