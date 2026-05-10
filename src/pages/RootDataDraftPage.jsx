@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const RootDataDraftPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { mode = 'edit', content = '' } = location.state || {};
+  const isViewMode = mode === 'view';
   const textareaRef = useRef(null);
-  const [draftText, setDraftText] = useState('');
+  const [draftText, setDraftText] = useState(content);
   const [toastMessage, setToastMessage] = useState('');
   const draftPlaceholder = `1. 这条根数据想解决什么问题
 2. 核心观点是什么
@@ -50,7 +53,7 @@ const RootDataDraftPage = () => {
           >
             <ChevronLeft size={24} strokeWidth={2.3} />
           </button>
-          <div className="text-[17px] font-bold text-[#111827]">根数据草案</div>
+          <div className="text-[17px] font-bold text-[#111827]">{isViewMode ? '查看草案' : '根数据草案'}</div>
           <div className="flex items-center gap-2">
             <div
               role="button"
@@ -70,9 +73,10 @@ const RootDataDraftPage = () => {
             <textarea
               ref={textareaRef}
               value={draftText}
-              onChange={(event) => setDraftText(event.target.value)}
-              placeholder={draftPlaceholder}
-              className="mt-4 h-[380px] w-full resize-none bg-white  text-[15px] leading-7 text-[#1F2329] outline-none placeholder:text-[#B6BAC3]"
+              onChange={(event) => !isViewMode && setDraftText(event.target.value)}
+              placeholder={isViewMode ? '' : draftPlaceholder}
+              readOnly={isViewMode}
+              className={`mt-4 h-[380px] w-full resize-none bg-white text-[15px] leading-7 text-[#1F2329] outline-none placeholder:text-[#B6BAC3] ${isViewMode ? 'cursor-default select-text' : ''}`}
               style={{ whiteSpace: 'pre-wrap' }}
             />
           </div>
@@ -82,15 +86,17 @@ const RootDataDraftPage = () => {
           className="absolute inset-x-0 bottom-0 shrink-0 bg-white px-4 pb-6 pt-3"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
         >
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white active:opacity-80"
-            >
-              保存
-            </button>
-          </div>
+          {!isViewMode && (
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white active:opacity-80"
+              >
+                保存
+              </button>
+            </div>
+          )}
         </div>
 
         {toastMessage && (

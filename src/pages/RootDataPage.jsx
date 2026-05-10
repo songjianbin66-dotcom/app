@@ -16,6 +16,7 @@ import {
   Search,
   X,
   RefreshCw,
+  FilePen,
 } from 'lucide-react';
 import './player.css';
 import MindmapPreviewPage from '../components/MindmapPreviewPage.jsx';
@@ -24,6 +25,15 @@ import ContentTabPanel from '../components/ContentTabPanel.jsx';
 import ContentPreviewPage from '../components/ContentPreviewPage.jsx';
 
 const THEME_COLOR = '#C8161D';
+
+const DRAFT_CONTENT_500 = `根数据是一套可以被团队反复调用的表达资产，它的价值不在于写完，而在于能否被看懂、被复用、被执行。
+
+创作一条优质根数据，需要先想清楚三件事：观点清楚、结构清楚、动作清楚。观点决定读者为什么要继续看，结构决定读者能否快速理解，动作决定内容是否能真正进入业务场景。
+
+在脑图阶段，把核心方法论提炼成关键要素，确保每一个节点都指向可执行的行动。在原文阶段，把脑图里的逻辑展开，用段落叙述清楚每个论点背后的依据和推演过程。在讲解阶段，把原文里的精华浓缩为一段说给人听的内容，让团队成员能够快速理解并付诸行动。
+
+一条好的根数据，最终的检验标准不是它有多完整，而是团队在业务场景里能否调用它来解决真实问题。根数据创作的起点是一个真实的业务挑战，终点是一套可以被反复执行的方法论沉淀。`;
+
 
 const DEFAULT_VIDEO_COVERS = [
   'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
@@ -277,6 +287,17 @@ const App = () => {
   const pendingReplaceOldSrcRef = useRef(null);
   const isVideoEditModeRef = useRef(false);
 
+  const floatingCreateBtnRef = useRef(null);
+  const floatingCreateDragRef = useRef({
+    isDragging: false,
+    pointerOffsetX: 0,
+    pointerOffsetY: 0,
+    startX: 0,
+    startY: 0,
+    suppressClick: false,
+  });
+  const [floatingCreateBtnPos, setFloatingCreateBtnPos] = useState({ x: 0, y: 0 });
+
   const okStyles = [
     {
       name: '经典红',
@@ -480,6 +501,79 @@ const App = () => {
     return () => {
       viewport.removeEventListener('resize', updateKeyboardToolbarPosition);
       viewport.removeEventListener('scroll', updateKeyboardToolbarPosition);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateCreateBtnPosition = () => {
+      const container = document.querySelector('.floating-create-container');
+      const button = floatingCreateBtnRef.current;
+      if (!container || !button) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      const buttonWidth = button.offsetWidth || 50;
+      const buttonHeight = button.offsetHeight || 75;
+
+      setFloatingCreateBtnPos((current) => {
+        const hasInitialPosition = current.x !== 0 || current.y !== 0;
+        const defaultX = containerWidth - buttonWidth - 14;
+        const defaultY = containerHeight - buttonHeight - 100;
+
+        if (!hasInitialPosition) {
+          return { x: defaultX, y: defaultY };
+        }
+
+        return {
+          x: Math.min(Math.max(12, current.x), containerWidth - buttonWidth - 12),
+          y: Math.min(Math.max(72, current.y), containerHeight - buttonHeight - 12),
+        };
+      });
+    };
+
+    updateCreateBtnPosition();
+    window.addEventListener('resize', updateCreateBtnPosition);
+    return () => window.removeEventListener('resize', updateCreateBtnPosition);
+  }, []);
+
+  useEffect(() => {
+    const handlePointerMove = (event) => {
+      if (!floatingCreateDragRef.current.isDragging) return;
+
+      const container = document.querySelector('.floating-create-container');
+      const button = floatingCreateBtnRef.current;
+      if (!container || !button) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const buttonWidth = button.offsetWidth;
+      const buttonHeight = button.offsetHeight;
+      const nextX = event.clientX - containerRect.left - floatingCreateDragRef.current.pointerOffsetX;
+      const nextY = event.clientY - containerRect.top - floatingCreateDragRef.current.pointerOffsetY;
+      const movedDistance = Math.hypot(
+        event.clientX - floatingCreateDragRef.current.startX,
+        event.clientY - floatingCreateDragRef.current.startY
+      );
+
+      if (movedDistance > 4) {
+        floatingCreateDragRef.current.suppressClick = true;
+      }
+
+      setFloatingCreateBtnPos({
+        x: Math.min(Math.max(12, nextX), containerRect.width - buttonWidth - 12),
+        y: Math.min(Math.max(72, nextY), containerRect.height - buttonHeight - 12),
+      });
+    };
+
+    const handlePointerUp = () => {
+      floatingCreateDragRef.current.isDragging = false;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
   }, []);
 
@@ -1350,7 +1444,7 @@ const App = () => {
     ];
 
     return (
-    <div className="flex flex-col h-full bg-white relative">
+    <div className="flex flex-col h-full bg-white relative floating-create-container">
       {/* 顶部导航 */}
       <div className="bg-white px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2">
@@ -1686,6 +1780,40 @@ const App = () => {
           </button>
         </div>
       </BottomSheet>
+
+      {activeTab === 'mindmap' && (
+        <button
+          ref={floatingCreateBtnRef}
+          type="button"
+          className="content-preview-floating-edit"
+          aria-label="创作"
+          style={{
+            left: `${floatingCreateBtnPos.x}px`,
+            top: `${floatingCreateBtnPos.y}px`,
+          }}
+          onPointerDown={(event) => {
+            const buttonRect = floatingCreateBtnRef.current?.getBoundingClientRect();
+            if (!buttonRect) return;
+            floatingCreateDragRef.current.isDragging = true;
+            floatingCreateDragRef.current.pointerOffsetX = event.clientX - buttonRect.left;
+            floatingCreateDragRef.current.pointerOffsetY = event.clientY - buttonRect.top;
+            floatingCreateDragRef.current.startX = event.clientX;
+            floatingCreateDragRef.current.startY = event.clientY;
+            floatingCreateDragRef.current.suppressClick = false;
+          }}
+          onClick={(event) => {
+            if (floatingCreateDragRef.current.suppressClick) {
+              event.preventDefault();
+              floatingCreateDragRef.current.suppressClick = false;
+              return;
+            }
+            navigate('/root-data-draft', { state: { mode: 'view', content: DRAFT_CONTENT_500 } });
+          }}
+        >
+          <FilePen size={18} strokeWidth={2.4} />
+          <span>草案</span>
+        </button>
+      )}
 
       <style>{`
         .inline-input { 

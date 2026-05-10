@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Clock, Eye, Heart, MessageSquare, Pencil, Star, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, Eye, Heart, MessageSquare, Pencil, PenLine, Star, Trash2 } from 'lucide-react';
 import { TiArrowForward } from 'react-icons/ti';
 import {
   VIDEO_COVER_SETS,
@@ -36,6 +36,19 @@ const formatCountLabel = (value) => {
     return `${scaledValue.replace(/\.0$/, '')}k`;
   }
   return String(value);
+};
+
+// 生成伪随机50字符（根据 id 固定内容）
+const RANDOM_CHARS_POOL = '根数据创作初审管理链主企业策划转型升级实战案例经验总结未来打算阅读心得脑图讲解原文数智商业模式战略认知增长方法论执行步骤目标计划实现价值团队协作创新突破成长学习思考总结复盘改进优化协同驱动';
+const generateRandomChars = (seed) => {
+  let s = Math.abs(seed) || 1;
+  const chars = Array.from(RANDOM_CHARS_POOL);
+  const result = [];
+  for (let i = 0; i < 50; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    result.push(chars[s % chars.length]);
+  }
+  return result.join('');
 };
 
 const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
@@ -245,6 +258,28 @@ const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = null }) 
   );
 };
 
+// 初审 Tab 卡片：上方50字符 + 下方管理操作区
+const DraftReviewCard = ({ data, manageBar }) => {
+  const randomChars = useMemo(() => generateRandomChars(data.id), [data.id]);
+  return (
+    <article className="bg-white py-4 px-4">
+      <div className="mb-3">
+        <p className="text-[15px] leading-[1.85] text-[#1F2329] tracking-[0.02em] break-all">
+          {randomChars}
+        </p>
+        {data.updatedAt && (
+          <p className="mt-1.5 text-right text-[11px] font-medium text-gray-400 tracking-[0.01em]">
+            更新时间：{data.updatedAt}
+          </p>
+        )}
+      </div>
+      <div className="border-t border-[#F0F1F5] pt-3">
+        {manageBar}
+      </div>
+    </article>
+  );
+};
+
 const INITIAL_COUNT = 4;
 const LOAD_STEP = 4;
 
@@ -281,7 +316,7 @@ const buildMyRootData = () =>
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY['讲解'],
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY['讲解']),
           title: getVideoTitle(i, '讲解'),
-          agent: '未来打算',
+          agent: '经验总结',
           duration: '03:45',
           likes: i % 2 === 0 ? '1.5k' : '1.1k',
           favorites: i % 2 === 0 ? '826' : '644',
@@ -295,7 +330,7 @@ const buildMyRootData = () =>
           playerSectionKey: PLAYER_SECTION_KEY_BY_CATEGORY['原文'],
           playerVideoId: getPlayerVideoId(playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY['原文']),
           title: getVideoTitle(i, '原文'),
-          agent: '阅读心得',
+          agent: '经验总结',
           duration: '05:15',
           likes: i % 2 === 0 ? '978' : '742',
           favorites: i % 2 === 0 ? '435' : '389',
@@ -324,30 +359,41 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const ManageBar = ({ status, onView, onEdit, onDelete }) => (
-  <div className="flex items-center justify-between">
-    <StatusBadge status={status} />
-    <div className="flex items-center gap-2">
+const ManageBar = ({ status, onView, onEdit, onDelete, onCreate }) => (
+  <div className="flex flex-col gap-2">
+    {onCreate && status === '审核通过' && (
       <div
-        onClick={onView}
-        className="inline-flex items-center gap-1 rounded-[8px] border border-[#E5E6EB] bg-white px-3 py-1 text-[12px] font-medium text-[#646A73] active:bg-[#F5F6F8] transition-colors cursor-pointer"
+        onClick={onCreate}
+        className="flex items-center justify-center gap-1.5 w-full rounded-[8px] bg-[#C8161D] py-2 text-[12px] font-semibold text-white active:opacity-80 transition-opacity cursor-pointer"
       >
-        <Eye size={13} strokeWidth={2} />
-        查看
+        <PenLine size={13} strokeWidth={2} />
+        创作
       </div>
-      <div
-        onClick={onEdit}
-        className="inline-flex items-center gap-1 rounded-[8px] border border-[#E5E6EB] bg-white px-3 py-1 text-[12px] font-medium text-[#646A73] active:bg-[#F5F6F8] transition-colors cursor-pointer"
-      >
-        <Pencil size={13} strokeWidth={2} />
-        编辑
-      </div>
-      <div
-        onClick={onDelete}
-        className="inline-flex items-center gap-1 rounded-[8px] bg-[#C8161D] px-3 py-1 text-[12px] font-medium text-white active:opacity-80 transition-opacity cursor-pointer"
-      >
-        <Trash2 size={13} strokeWidth={2} />
-        删除
+    )}
+    <div className="flex items-center justify-between">
+      <StatusBadge status={status} />
+      <div className="flex items-center gap-2">
+        <div
+          onClick={onView}
+          className="inline-flex items-center gap-1 rounded-[8px] border border-[#E5E6EB] bg-white px-3 py-1 text-[12px] font-medium text-[#646A73] active:bg-[#F5F6F8] transition-colors cursor-pointer"
+        >
+          <Eye size={13} strokeWidth={2} />
+          查看
+        </div>
+        <div
+          onClick={onEdit}
+          className="inline-flex items-center gap-1 rounded-[8px] border border-[#E5E6EB] bg-white px-3 py-1 text-[12px] font-medium text-[#646A73] active:bg-[#F5F6F8] transition-colors cursor-pointer"
+        >
+          <Pencil size={13} strokeWidth={2} />
+          编辑
+        </div>
+        <div
+          onClick={onDelete}
+          className="inline-flex items-center gap-1 rounded-[8px] bg-[#C8161D] px-3 py-1 text-[12px] font-medium text-white active:opacity-80 transition-opacity cursor-pointer"
+        >
+          <Trash2 size={13} strokeWidth={2} />
+          删除
+        </div>
       </div>
     </div>
   </div>
@@ -401,6 +447,7 @@ const MyRootDataPage = () => {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [showReviewingDialog, setShowReviewingDialog] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [activePageTab, setActivePageTab] = useState('creation');
 
   const openPlayer = ({ action = 'play', rootId, sectionKey, videoId } = {}) => {
     navigate('/player', {
@@ -410,11 +457,19 @@ const MyRootDataPage = () => {
     });
   };
 
-  const handleEdit = (status) => {
+  const handleView = (content = '') => {
+    navigate('/root-data-draft', { state: { mode: 'view', content } });
+  };
+
+  const handleEdit = (status, content = '') => {
     if (status === '审核中') {
       setShowReviewingDialog(true);
       return;
     }
+    navigate('/root-data-draft', { state: { mode: 'edit', content } });
+  };
+
+  const handleCreate = () => {
     navigate('/root-data');
   };
 
@@ -438,6 +493,8 @@ const MyRootDataPage = () => {
           />
         )}
         {showReviewingDialog && <ReviewingDialog onClose={() => setShowReviewingDialog(false)} />}
+
+        {/* 顶部导航栏 */}
         <header className="bg-white px-4 py-3 flex items-center border-b border-[#F0F1F2] shrink-0 sticky top-0 z-50">
           <button
             type="button"
@@ -450,45 +507,106 @@ const MyRootDataPage = () => {
           <span className="font-bold text-[17px] ml-1">根数据管理</span>
         </header>
 
-        <main className="flex-1 overflow-y-auto no-scrollbar bg-white">
-          <div className="divide-y divide-[#F0F1F5]">
-            {myData.slice(0, visibleCount).map((item) => (
-              <DataCard
-                key={item.id}
-                data={item}
-                hideAuthor
-                onOpenPlayer={openPlayer}
-                manageBar={
-                  <ManageBar
-                    status={item.status}
-                    onView={() =>
-                      openPlayer({
-                        action: 'play',
-                        rootId: item.playerRootId,
-                        sectionKey: PLAYER_SECTION_KEY_BY_CATEGORY['脑图'],
-                        videoId: getPlayerVideoId(item.playerRootId, PLAYER_SECTION_KEY_BY_CATEGORY['脑图']),
-                      })
-                    }
-                    onEdit={() => handleEdit(item.status)}
-                    onDelete={() => handleDelete(item.id)}
-                  />
-                }
-              />
-            ))}
-          </div>
-          {visibleCount < myData.length && (
-            <div className="bg-white px-4 py-5">
+        {/* Tab 切换栏 */}
+        <div className="flex shrink-0 bg-white">
+          {[
+            { key: 'creation', label: '创作' },
+            { key: 'review', label: '初审' },
+          ].map((tab) => {
+            const isActive = activePageTab === tab.key;
+            return (
               <button
+                key={tab.key}
                 type="button"
-                onClick={() => setVisibleCount((c) => Math.min(c + LOAD_STEP, myData.length))}
-                className="flex w-full items-center justify-center py-2 text-[15px] font-bold theme-text transition-opacity duration-200 active:opacity-70"
+                onClick={() => setActivePageTab(tab.key)}
+                className={`flex-1 py-3 text-[15px] transition-colors duration-200 relative ${
+                  isActive
+                    ? 'font-extrabold text-[#C8161D]'
+                    : 'font-medium text-[#8F959E]'
+                }`}
               >
-                点击加载更多
+                {tab.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-[2.5px] rounded-full bg-[#C8161D]" />
+                )}
               </button>
+            );
+          })}
+        </div>
+
+        {/* 创作 Tab */}
+        {activePageTab === 'creation' && (
+          <main className="flex-1 overflow-y-auto no-scrollbar bg-white">
+            <div className="divide-y divide-[#F0F1F5]">
+              {myData.slice(0, visibleCount).map((item) => (
+                <DataCard
+                  key={item.id}
+                  data={item}
+                  hideAuthor
+                  onOpenPlayer={openPlayer}
+                  manageBar={
+                    <ManageBar
+                      status={item.status}
+                      onView={handleView}
+                      onEdit={() => handleEdit(item.status)}
+                      onDelete={() => handleDelete(item.id)}
+                    />
+                  }
+                />
+              ))}
             </div>
-          )}
-          <div className="h-10" />
-        </main>
+            {visibleCount < myData.length && (
+              <div className="bg-white px-4 py-5">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((c) => Math.min(c + LOAD_STEP, myData.length))}
+                  className="flex w-full items-center justify-center py-2 text-[15px] font-bold theme-text transition-opacity duration-200 active:opacity-70"
+                >
+                  点击加载更多
+                </button>
+              </div>
+            )}
+            <div className="h-10" />
+          </main>
+        )}
+
+        {/* 初审 Tab */}
+        {activePageTab === 'review' && (
+          <main className="flex-1 overflow-y-auto no-scrollbar bg-white">
+            <div className="divide-y divide-[#F0F1F5]">
+              {myData.slice(0, visibleCount).map((item) => {
+                const reviewContent = generateRandomChars(item.id);
+                return (
+                  <DraftReviewCard
+                    key={item.id}
+                    data={item}
+                    manageBar={
+                      <ManageBar
+                        status={item.status}
+                        onView={() => handleView(reviewContent)}
+                        onEdit={() => handleEdit(item.status, reviewContent)}
+                        onDelete={() => handleDelete(item.id)}
+                        onCreate={handleCreate}
+                      />
+                    }
+                  />
+                );
+              })}
+            </div>
+            {visibleCount < myData.length && (
+              <div className="bg-white px-4 py-5">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((c) => Math.min(c + LOAD_STEP, myData.length))}
+                  className="flex w-full items-center justify-center py-2 text-[15px] font-bold theme-text transition-opacity duration-200 active:opacity-70"
+                >
+                  点击加载更多
+                </button>
+              </div>
+            )}
+            <div className="h-10" />
+          </main>
+        )}
       </div>
     </div>
   );
