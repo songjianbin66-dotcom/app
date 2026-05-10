@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   QrCode,
   Share2,
@@ -51,6 +52,7 @@ const walletRecords = {
 };
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const [showIncomeDetail, setShowIncomeDetail] = useState(false);
   const [walletTab, setWalletTab] = useState('income');
   const [showBalance, setShowBalance] = useState(true);
@@ -122,7 +124,7 @@ const ProfilePage = () => {
         <div className="bg-white rounded-[16px] shadow-sm border border-[#F0F1F2] overflow-hidden mb-6">
           {[
             { icon: <Wallet size={18} />, label: '我的钱包', sub: '¥8,560.24', onClick: () => setShowIncomeDetail(true) },
-            { icon: <Database size={18} />, label: '根数据管理', sub: '42,851 条' },
+            { icon: <Database size={18} />, label: '根数据管理', sub: '42,851 条', onClick: () => navigate('/my-root-data') },
             { icon: <Network size={18} />, label: '指导关系管理', sub: '' },
             { icon: <ShieldCheck size={18} />, label: '数据存证', sub: '124 项' },
             { icon: <Briefcase size={18} />, label: '团队管理', sub: '' },

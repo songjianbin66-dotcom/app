@@ -19,10 +19,10 @@ import {
 } from 'lucide-react';
 import { TiArrowForward } from 'react-icons/ti';
 
-const THEME_COLOR = '#C8161D';
+export const THEME_COLOR = '#C8161D';
 const INITIAL_ROOT_DATA_COUNT = 4;
 const ROOT_DATA_LOAD_STEP = 4;
-const SHARED_THEME_STYLES = `
+export const SHARED_THEME_STYLES = `
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .theme-text { color: ${THEME_COLOR}; }
@@ -30,8 +30,8 @@ const SHARED_THEME_STYLES = `
   .theme-border { border-color: ${THEME_COLOR}; }
 `;
 const USER_BADGE_CLASS = 'bg-[#FCEBEC] theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider';
-const TOP_LEFT_CATEGORY_BADGE_CLASS = 'absolute left-0 top-0 z-10 rounded-br-lg bg-[#000000]/50 px-3 py-1 text-[10px] font-bold text-white shadow-lg';
-const VIDEO_COVER_SETS = [
+export const TOP_LEFT_CATEGORY_BADGE_CLASS = 'absolute left-0 top-0 z-10 rounded-br-lg bg-[#000000]/50 px-3 py-1 text-[10px] font-bold text-white shadow-lg';
+export const VIDEO_COVER_SETS = [
   [
     'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
     'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80',
@@ -48,14 +48,14 @@ const VIDEO_COVER_SETS = [
     'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=900&q=80',
   ],
 ];
-const PLAYER_ROOT_IDS = ['root-001', 'root-002', 'root-003'];
-const PLAYER_SECTION_KEY_BY_CATEGORY = {
+export const PLAYER_ROOT_IDS = ['root-001', 'root-002', 'root-003'];
+export const PLAYER_SECTION_KEY_BY_CATEGORY = {
   脑图: 'mindmap',
   原文: 'original',
   讲解: 'lecture',
 };
 
-const getPlayerVideoId = (rootId, sectionKey) => {
+export const getPlayerVideoId = (rootId, sectionKey) => {
   if (sectionKey === 'lecture') {
     return `${rootId}-lecture-1`;
   }
@@ -67,7 +67,7 @@ const getPlayerVideoId = (rootId, sectionKey) => {
   return `${rootId}-mindmap-1`;
 };
 
-const parseCountLabel = (value) => {
+export const parseCountLabel = (value) => {
   if (typeof value === 'number') {
     return value;
   }
@@ -85,7 +85,7 @@ const parseCountLabel = (value) => {
   return Math.round(Number.parseFloat(amount) * multiplier);
 };
 
-const formatCountLabel = (value) => {
+export const formatCountLabel = (value) => {
   if (value >= 10000) {
     const scaledValue = value >= 100000 ? (value / 10000).toFixed(0) : (value / 10000).toFixed(1);
     return `${scaledValue.replace(/\.0$/, '')}w`;
@@ -99,7 +99,7 @@ const formatCountLabel = (value) => {
   return String(value);
 };
 
-const getVideoTitle = (index, category) => {
+export const getVideoTitle = (index, category) => {
   const sequence = `(${index + 1})`;
 
   if (index % 2 === 0) {
@@ -835,7 +835,7 @@ const TabItem = ({ label, active, onClick }) => (
   </div>
 );
 
-const DataCard = ({ data, onOpenPlayer }) => {
+export const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = null }) => {
   const scrollRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(1);
   const [videoMetrics, setVideoMetrics] = useState(() =>
@@ -949,8 +949,8 @@ const DataCard = ({ data, onOpenPlayer }) => {
         <div className="mb-2 text-[11px] font-medium tracking-[0.01em] text-gray-400">
           {data.tags.join(' · ')}
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        {!hideAuthor && (
+          <div className="flex items-center gap-2 mb-3">
             <div className="w-9 h-9 rounded-full  overflow-hidden bg-[#F5F6F8]">
               <img src={data.authorAvatar} alt={data.author} className="h-full w-full object-cover" />
             </div>
@@ -961,55 +961,63 @@ const DataCard = ({ data, onOpenPlayer }) => {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[#8F959E]">
+        )}
+        <div className="flex items-center w-full text-[#8F959E]">
             <button
               type="button"
               aria-label="点赞"
               onClick={() => handleToggleMetric(currentVideo.id, 'likes')}
-              className={`inline-flex min-w-[52px] items-center gap-1 transition-colors duration-200 ${currentVideoMetric.liked ? 'theme-text' : 'text-[#8F959E]'}`}
+              className={`flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 ${currentVideoMetric.liked ? 'theme-text' : 'text-[#8F959E]'}`}
             >
-              <Heart size={14} fill={currentVideoMetric.liked ? 'currentColor' : 'none'} />
-              <span className="w-[30px] text-left text-[12px] tabular-nums">
+              <Heart size={18} fill={currentVideoMetric.liked ? 'currentColor' : 'none'} />
+              <span className="text-[14px] tabular-nums">
                 {formatCountLabel(currentVideoMetric.likes)}
               </span>
             </button>
+            <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
             <button
               type="button"
               aria-label="收藏"
               onClick={() => handleToggleMetric(currentVideo.id, 'favorites')}
-              className={`inline-flex min-w-[52px] items-center gap-1 transition-colors duration-200 ${currentVideoMetric.favorited ? 'theme-text' : 'text-[#8F959E]'}`}
+              className={`flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 ${currentVideoMetric.favorited ? 'theme-text' : 'text-[#8F959E]'}`}
             >
-              <Star size={14} fill={currentVideoMetric.favorited ? 'currentColor' : 'none'} />
-              <span className="w-[30px] text-left text-[12px] tabular-nums">
+              <Star size={18} fill={currentVideoMetric.favorited ? 'currentColor' : 'none'} />
+              <span className="text-[14px] tabular-nums">
                 {formatCountLabel(currentVideoMetric.favorites)}
               </span>
             </button>
+            <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
             <button
               type="button"
               aria-label="评论"
               onClick={() => openCurrentVideo('comment')}
-              className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
+              className="flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 active:text-[#646A73]"
             >
-              <MessageSquare size={14} />
-              <span className="text-[12px]">{currentVideo.comments}</span>
+              <MessageSquare size={18} />
+              <span className="text-[14px]">{currentVideo.comments}</span>
             </button>
+            <div className="w-[0.5px] h-4 bg-[#E5E6EB] shrink-0" />
             <button
               type="button"
               aria-label="分享"
               onClick={() => openCurrentVideo('share')}
-              className="flex items-center gap-1 transition-colors duration-200 active:text-[#646A73]"
+              className="flex flex-1 items-center justify-center gap-1.5 py-1 transition-colors duration-200 active:text-[#646A73]"
             >
-              <TiArrowForward size={16} />
-              <span className="text-[12px]">{currentVideo.shares}</span>
+              <TiArrowForward size={20} />
+              <span className="text-[14px]">{currentVideo.shares}</span>
             </button>
-          </div>
         </div>
+        {manageBar && (
+          <div className="mt-3 border-t border-[#F0F1F5] pt-3">
+            {manageBar}
+          </div>
+        )}
       </div>
     </article>
   );
 };
 
-const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
+export const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   <button
     type="button"
     className="snap-item w-[200px] h-[260px] snap-center relative rounded-[10px] overflow-hidden bg-[#1A1D21] flex-shrink-0 transition-all duration-300 shadow-md text-left cursor-pointer"
