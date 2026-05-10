@@ -177,12 +177,18 @@ const App = () => {
   const [pendingVideoTarget, setPendingVideoTarget] = useState(null);
   const [isSavingVideo, setIsSavingVideo] = useState(false);
   const [isUploadPreviewPlaying, setIsUploadPreviewPlaying] = useState(false);
+  const [isOriginEditorFocused, setIsOriginEditorFocused] = useState(false);
+  const [hasVisualViewportSupport, setHasVisualViewportSupport] = useState(false);
+  const [keyboardToolbarTop, setKeyboardToolbarTop] = useState(null);
+  const [isOriginKeyboardVisible, setIsOriginKeyboardVisible] = useState(false);
 
   const [okStyleIndex, setOkStyleIndex] = useState(0);
-  const editorRef = useRef(null);
+  const originEditorRef = useRef(null);
+  const lectureEditorRef = useRef(null);
   const videoFileInputRef = useRef(null);
   const uploadPreviewVideoRef = useRef(null);
   const createdObjectUrlsRef = useRef(new Set());
+  const visualViewportBaselineRef = useRef(0);
 
   const okStyles = [
     {
@@ -310,6 +316,69 @@ const App = () => {
   useEffect(() => () => {
     createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     createdObjectUrlsRef.current.clear();
+  }, []);
+
+  useEffect(() => {
+    const handleFocusIn = (event) => {
+      if (event.target === originEditorRef.current) {
+        setIsOriginEditorFocused(true);
+      }
+    };
+
+    const handleFocusOut = (event) => {
+      if (event.target !== originEditorRef.current) {
+        return;
+      }
+
+      window.setTimeout(() => {
+        setIsOriginEditorFocused(document.activeElement === originEditorRef.current);
+      }, 0);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'text') {
+      setIsOriginEditorFocused(false);
+      setIsOriginKeyboardVisible(false);
+      setKeyboardToolbarTop(null);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    setHasVisualViewportSupport(Boolean(viewport));
+
+    if (!viewport) {
+      return undefined;
+    }
+
+    const updateKeyboardToolbarPosition = () => {
+      const viewportBottom = viewport.height + viewport.offsetTop;
+      visualViewportBaselineRef.current = Math.max(visualViewportBaselineRef.current, viewportBottom);
+      const nextOffset = Math.max(0, visualViewportBaselineRef.current - viewportBottom);
+      const toolbarHeight = 48;
+      const toolbarGap = 8;
+      const nextTop = Math.max(0, viewport.offsetTop + viewport.height - toolbarHeight - toolbarGap);
+      setKeyboardToolbarTop(nextTop);
+      setIsOriginKeyboardVisible(nextOffset > 80);
+    };
+
+    updateKeyboardToolbarPosition();
+    viewport.addEventListener('resize', updateKeyboardToolbarPosition);
+    viewport.addEventListener('scroll', updateKeyboardToolbarPosition);
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardToolbarPosition);
+      viewport.removeEventListener('scroll', updateKeyboardToolbarPosition);
+    };
   }, []);
 
   const handleTabClick = (tab) => {
@@ -609,6 +678,13 @@ const App = () => {
 
   const showSharedDraftButton = activeTab === 'mindmap' || activeTab === 'text';
   const handleSharedDraftSave = activeTab === 'mindmap' ? handleMindmapComplete : handleOriginSaveDraft;
+  const showOriginKeyboardToolbar =
+    activeTab === 'text' &&
+    isOriginEditorFocused &&
+    (!hasVisualViewportSupport || isOriginKeyboardVisible);
+  const originKeyboardToolbarStyle = hasVisualViewportSupport && keyboardToolbarTop !== null
+    ? { top: `${keyboardToolbarTop}px` }
+    : { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' };
 
   const addStepAt = (idx) => {
     const newSteps = [...mindmapData.steps];
@@ -649,32 +725,39 @@ const App = () => {
     event.preventDefault();
   };
 
-  const execCommand = (command, value = null) => {
-    editorRef.current?.focus();
+  const getEditorRefByType = (editorType = 'origin') =>
+    editorType === 'lecture' ? lectureEditorRef.current : originEditorRef.current;
+
+  const execCommand = (command, value = null, editorType = 'origin') => {
+    getEditorRefByType(editorType)?.focus();
     document.execCommand(command, false, value);
-    updateHtmlContent();
+    updateHtmlContent(editorType);
   };
 
-  const insertImage = () => {
+  const insertImage = (editorType = 'origin') => {
     const imageUrl = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60";
     const imgHtml = `<img src="${imageUrl}" style="max-width:100%; border-radius:8px; margin: 8px 0; display:block;" />`;
-    editorRef.current?.focus();
+    getEditorRefByType(editorType)?.focus();
     document.execCommand('insertHTML', false, imgHtml);
-    updateHtmlContent();
+    updateHtmlContent(editorType);
   };
 
-  const updateHtmlContent = () => {
-    if (editorRef.current) {
-      const content = editorRef.current.innerHTML;
-      if (activeTab === 'text') {
-        setOriginContent(prev => ({ ...prev, html: content }));
-      } else {
-        setLectureEpisodes(prev => prev.map(episode =>
-          episode.id === activeLectureEpisodeId
-            ? { ...episode, html: content }
-            : episode
-        ));
+  const updateHtmlContent = (editorType = 'origin') => {
+    const editorElement = getEditorRefByType(editorType);
+
+    if (editorElement) {
+      const content = editorElement.innerHTML;
+
+      if (editorType === 'origin') {
+        setOriginContent((prev) => ({ ...prev, html: content }));
+        return;
       }
+
+      setLectureEpisodes((prev) => prev.map((episode) =>
+        episode.id === activeLectureEpisodeId
+          ? { ...episode, html: content }
+          : episode
+      ));
     }
   };
 
@@ -981,23 +1064,23 @@ const App = () => {
           <div className="mb-3 text-[13px] font-bold text-[#4B5563]">文本讲解</div>
           <div className="relative overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
             <div className="flex h-11 items-center gap-1 border-b border-[#EEF0F4] bg-[#FAFAFC] px-3 text-[#4B5563]">
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('bold')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('bold'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="加粗"><Bold size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('italic')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('italic'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="斜体"><Italic size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('underline')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('underline'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="下划线"><Underline size={17} /></div>
+              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('bold', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('bold', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="加粗"><Bold size={17} /></div>
+              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('italic', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('italic', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="斜体"><Italic size={17} /></div>
+              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('underline', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('underline', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="下划线"><Underline size={17} /></div>
               <div className="mx-1 h-5 w-px bg-[#E5E7EB]" />
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('insertUnorderedList')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('insertUnorderedList'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="项目列表"><List size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('formatBlock', 'blockquote')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('formatBlock', 'blockquote'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="引用"><Quote size={17} /></div>
-              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('createLink', '#')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('createLink', '#'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="链接"><Link size={17} /></div>
+              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('insertUnorderedList', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('insertUnorderedList', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="项目列表"><List size={17} /></div>
+              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('formatBlock', 'blockquote', 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('formatBlock', 'blockquote', 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="引用"><Quote size={17} /></div>
+              <div onMouseDown={keepEditorSelection} onClick={() => execCommand('createLink', '#', 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('createLink', '#', 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="链接"><Link size={17} /></div>
               <div className="ml-auto flex gap-1 text-gray-300">
-                <div onMouseDown={keepEditorSelection} onClick={() => execCommand('undo')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('undo'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="撤销"><Undo2 size={17} /></div>
-                <div onMouseDown={keepEditorSelection} onClick={() => execCommand('redo')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('redo'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="重做"><Redo2 size={17} /></div>
+                <div onMouseDown={keepEditorSelection} onClick={() => execCommand('undo', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('undo', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="撤销"><Undo2 size={17} /></div>
+                <div onMouseDown={keepEditorSelection} onClick={() => execCommand('redo', null, 'lecture')} onKeyDown={(event) => handleDivActionKeyDown(event, () => execCommand('redo', null, 'lecture'))} className="flex h-8 w-8 items-center justify-center rounded-md active:bg-gray-100" role="button" tabIndex={0} aria-label="重做"><Redo2 size={17} /></div>
               </div>
             </div>
             <div
               key={activeLectureEpisode.id}
-              ref={editorRef}
+              ref={lectureEditorRef}
               contentEditable
-              onInput={updateHtmlContent}
+              onInput={() => updateHtmlContent('lecture')}
               className="min-h-[240px] p-4 pb-10 text-[15px] leading-7 text-[#374151] outline-none"
               dangerouslySetInnerHTML={{ __html: activeLectureEpisode.html }}
             />
@@ -1259,51 +1342,50 @@ const App = () => {
 
         {activeTab === 'text' && (
           <div className="space-y-4">
-            <div>
+            <div className="">
               <input
                 type="text"
                 placeholder="请输入原文标题"
-                className="min-w-0 w-full border-none bg-transparent text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
+                className="min-w-0 w-full border-none bg-transparent text-left text-[18px] font-bold leading-[1.6] text-[#1F2329] outline-none placeholder:font-medium placeholder:text-[#C9CDD7]"
                 value={tabTitles.text}
                 onChange={(e) => updateTabTitle('text', e.target.value)}
               />
             </div>
-            <div className="bg-white rounded-xl flex flex-col border border-gray-100 overflow-hidden min-h-[400px] relative">
-              <div className="p-2 bg-gray-50 border-b border-gray-100 flex items-center space-x-3 overflow-x-auto no-scrollbar shrink-0">
-                <div className="flex space-x-3 pr-2 border-r border-gray-200">
-                  <button type="button" onMouseDown={keepEditorSelection} onClick={() => execCommand('bold')} className="p-1 hover:bg-gray-200 rounded transition-colors"><Bold size={16} className="text-gray-600" /></button>
-                  <button type="button" onMouseDown={keepEditorSelection} onClick={() => execCommand('italic')} className="p-1 hover:bg-gray-200 rounded transition-colors"><Italic size={16} className="text-gray-600" /></button>
-                  <button type="button" onMouseDown={keepEditorSelection} onClick={() => execCommand('underline')} className="p-1 hover:bg-gray-200 rounded transition-colors"><Underline size={16} className="text-gray-600" /></button>
-                </div>
-                <button type="button" aria-label="插图" onMouseDown={keepEditorSelection} onClick={insertImage} className="flex h-7 w-7 items-center justify-center text-gray-600 shrink-0 hover:bg-gray-200 rounded transition-colors">
-                  <ImageIcon size={14} />
-                </button>
-              </div>
-              <div ref={editorRef} contentEditable onInput={updateHtmlContent} className="p-4 flex-1 outline-none text-[15px] leading-relaxed overflow-y-auto no-scrollbar" style={{ minHeight: '300px' }} dangerouslySetInnerHTML={{ __html: originContent.html }} />
+            <div className="relative min-h-[400px] overflow-hidden rounded-[22px] bg-white">
+              <div
+                ref={originEditorRef}
+                contentEditable
+                onInput={() => updateHtmlContent('origin')}
+                className="flex-1 overflow-y-auto px-4 pb-24 text-left text-[15px] leading-8 text-[#374151] outline-none no-scrollbar"
+                style={{ minHeight: '300px', textAlign: 'left' }}
+                dangerouslySetInnerHTML={{ __html: originContent.html }}
+              />
               {!originContent.html && (
-                <div className="absolute top-[88px] left-4 text-gray-300 pointer-events-none text-sm">
+                <div className="pointer-events-none absolute left-1 right-4 top-1 w-auto text-left text-sm text-gray-300">
                   请输入原文内容...
                 </div>
               )}
             </div>
-            <AttachedVideoSection
-              items={originContent.videos}
-              maxCount={1}
-              onAdd={() => openVideoPicker({ type: 'origin' })}
-              onRemove={(id) =>
-                setOriginContent((prev) => ({
-                  ...prev,
-                  videos: prev.videos.filter((video) => {
-                    if (video.id === id) {
-                      disposeVideoAsset(video);
-                      return false;
-                    }
+            {originContent.videos.length > 0 && (
+              <AttachedVideoSection
+                items={originContent.videos}
+                maxCount={1}
+                onAdd={() => openVideoPicker({ type: 'origin' })}
+                onRemove={(id) =>
+                  setOriginContent((prev) => ({
+                    ...prev,
+                    videos: prev.videos.filter((video) => {
+                      if (video.id === id) {
+                        disposeVideoAsset(video);
+                        return false;
+                      }
 
-                    return true;
-                  }),
-                }))
-              }
-            />
+                      return true;
+                    }),
+                  }))
+                }
+              />
+            )}
           </div>
         )}
 
@@ -1456,34 +1538,84 @@ const App = () => {
         )}
       </div>
 
-      <div
-        className="pointer-events-none absolute inset-x-4 z-20"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
-      >
-        <div className="pointer-events-auto flex gap-3">
-          {createTabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => handleTabClick(tab.id)}
-                className={`flex h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[12px] border px-3 transition-all active:scale-[0.98] ${
-                  isActive
-                    ? 'border-[#C8161D] bg-[#C8161D] text-white'
-                    : 'border-[#E5E7EB] bg-white text-[#3F3F46]'
-                }`}
-              >
-                {React.cloneElement(tab.icon, { size: 16, strokeWidth: isActive ? 2.25 : 2 })}
-                <span className={`truncate text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
+      {showOriginKeyboardToolbar && (
+        <div
+          className="pointer-events-none fixed inset-x-0 z-30"
+          style={originKeyboardToolbarStyle}
+        >
+          <div className="pointer-events-auto flex h-12 w-full items-center gap-1 border-t border-[#D1D5DB] bg-white px-3">
+            <button
+              type="button"
+              onMouseDown={keepEditorSelection}
+              onClick={() => execCommand('bold', null, 'origin')}
+              className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
+              aria-label="加粗"
+            >
+              <Bold size={18} strokeWidth={2.4} />
+            </button>
+            <button
+              type="button"
+              onMouseDown={keepEditorSelection}
+              onClick={() => execCommand('underline', null, 'origin')}
+              className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
+              aria-label="下划线"
+            >
+              <Underline size={18} strokeWidth={2.2} />
+            </button>
+            <div className="mx-1 h-5 w-px bg-[#E5E7EB]" />
+            <button
+              type="button"
+              onMouseDown={keepEditorSelection}
+              onClick={() => insertImage('origin')}
+              className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
+              aria-label="插图"
+            >
+              <ImageIcon size={18} strokeWidth={2.2} />
+            </button>
+            <div className="mx-1 h-5 w-px bg-[#E5E7EB]" />
+            <button
+              type="button"
+              onMouseDown={keepEditorSelection}
+              onClick={() => openVideoPicker({ type: 'origin' })}
+              className="flex h-9 min-w-9 items-center justify-center rounded-[12px] text-[#2B2F36] active:bg-[#F5F6F8]"
+              aria-label="添加视频"
+            >
+              <Video size={18} strokeWidth={2.1} />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {!showOriginKeyboardToolbar && (
+        <div
+          className="pointer-events-none absolute inset-x-4 z-20"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 36px)' }}
+        >
+          <div className="pointer-events-auto flex gap-3">
+            {createTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleTabClick(tab.id)}
+                  className={`flex h-[40px] min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[12px] border px-3 transition-all active:scale-[0.98] ${
+                    isActive
+                      ? 'border-[#C8161D] bg-[#C8161D] text-white'
+                      : 'border-[#E5E7EB] bg-white text-[#3F3F46]'
+                  }`}
+                >
+                  {React.cloneElement(tab.icon, { size: 16, strokeWidth: isActive ? 2.25 : 2 })}
+                  <span className={`truncate text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <style>{`
         .inline-input { 
