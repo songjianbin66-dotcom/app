@@ -10,9 +10,7 @@ const RootDataDraftPage = () => {
   const textareaRef = useRef(null);
   const [draftText, setDraftText] = useState(content);
   const [toastMessage, setToastMessage] = useState('');
-  const draftPlaceholder = `1. 这条根数据想解决什么问题
-2. 核心观点是什么
-3. 后续准备拆成哪些原文和讲解`;
+  const draftPlaceholder = `请将已创作完成的根数据草案粘贴到这里，保存后提交初审`;
 
   useEffect(() => {
     if (!toastMessage) {
@@ -39,6 +37,11 @@ const RootDataDraftPage = () => {
 
   const handleContinueCreate = () => {
     navigate('/root-data');
+  };
+
+  const handleHowToWrite = () => {
+    // showToast('可按“背景-核心观点-结构拆解-行动建议”来写，先讲清楚，再提交初审');
+    // textareaRef.current?.focus();
   };
 
   return (
@@ -87,15 +90,24 @@ const RootDataDraftPage = () => {
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
         >
           {!isViewMode && (
-            <div className="flex gap-3">
+            <>
               <button
                 type="button"
-                onClick={handleSave}
-                className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white active:opacity-80"
+                onClick={handleHowToWrite}
+                className="absolute right-5 top-3 text-[14px] font-medium text-[#B6BAC3] active:opacity-70"
               >
-                保存
+                怎么写？
               </button>
-            </div>
+              <div className="flex gap-3 pt-10">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="flex h-[52px] flex-1 items-center justify-center rounded-[14px] bg-[#C8161D] text-[16px] font-bold text-white active:opacity-80"
+                >
+                  保存
+                </button>
+              </div>
+            </>
           )}
         </div>
 

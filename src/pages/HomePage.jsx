@@ -126,6 +126,8 @@ export const getVideoTitle = (index, category) => {
   return `《从 0 到 1 搭建产业数智链》原稿节选 ${sequence}`;
 };
 
+const shouldShowVideoAgent = (category) => category === '讲解';
+
 const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -516,7 +518,7 @@ const App = () => {
 
             <div className="bg-white">
               {activeTab === '根数据' && (
-                <div className="divide-y divide-[#F0F1F5]">
+                <div>
                   {cardData.slice(0, visibleRootDataCount).map((item) => (
                     <DataCard
                       key={item.id}
@@ -719,7 +721,7 @@ const SearchPage = ({ onClose, rootDataResults = [], userResults = [], onOpenPla
 
         <div className="flex-1 overflow-y-auto bg-white no-scrollbar">
           {activeSearchTab === '根数据' && (
-            <div className="divide-y divide-[#F5F6F8] bg-white">
+            <div className="bg-white">
               {filteredRootDataResults.length > 0 ? (
                 filteredRootDataResults.slice(0, 8).map((item) => (
                   <SearchRootDataCard key={item.id} data={item} onOpenPlayer={onOpenPlayer} />
@@ -791,9 +793,11 @@ const SearchRootDataCard = ({ data, onOpenPlayer }) => {
                 {tag}
               </span>
             ))}
-            <span className="rounded-full theme-bg px-2 py-0.5 text-[10px] font-semibold text-white">
-              {primaryVideo.agent}
-            </span>
+            {shouldShowVideoAgent(primaryVideo.category) ? (
+              <span className="rounded-full theme-bg px-2 py-0.5 text-[10px] font-semibold text-white">
+                {primaryVideo.agent}
+              </span>
+            ) : null}
           </div>
           <h3 className="line-clamp-2 text-[14px] font-bold leading-[1.45] text-[#1F2329]">
             {primaryVideo.title}
@@ -936,6 +940,13 @@ export const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = n
 
   return (
     <article className="bg-white py-4">
+      {data.updatedAt && (
+        <div className="flex justify-end px-4 pb-[15px]">
+          <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+            更新时间：{data.updatedAt}
+          </span>
+        </div>
+      )}
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
@@ -963,15 +974,10 @@ export const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = n
       
       <div className="px-4 pt-3">
         <h3 className="text-[15px] font-bold leading-[1.4] line-clamp-2 mb-2 text-[#1F2329]">{currentVideo.title}</h3>
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2">
           <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
             {data.tags.join(' · ')}
           </span>
-          {data.updatedAt && (
-            <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
-              更新时间：{data.updatedAt}
-            </span>
-          )}
         </div>
         <div className="flex items-center justify-between">
           {!hideAuthor && (
@@ -1044,7 +1050,7 @@ export const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   <button
     type="button"
     className="snap-item w-[200px] h-[260px] snap-center relative rounded-[10px] overflow-hidden bg-[#1A1D21] flex-shrink-0 transition-all duration-300 shadow-md text-left cursor-pointer"
-    aria-label={`播放${video.category}视频，来自${video.agent}`}
+    aria-label={shouldShowVideoAgent(video.category) ? `播放${video.category}视频，来自${video.agent}` : `播放${video.category}视频`}
     onClick={onOpenPlayer}
   >
     <img
@@ -1057,9 +1063,11 @@ export const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
     <div className={TOP_LEFT_CATEGORY_BADGE_CLASS}>
       {video.category}
     </div>
-    <div className="absolute right-0 top-0 z-10 rounded-bl-lg theme-bg px-3 py-1 text-[10px] font-bold text-white shadow-lg">
-      {video.agent}
-    </div>
+    {shouldShowVideoAgent(video.category) ? (
+      <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#E5CEAF] px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+        {video.agent}
+      </div>
+    ) : null}
     <div className="absolute inset-0 flex items-center justify-center">
       <div className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-500 ${isActive ? 'bg-white/40 scale-110' : 'bg-white/20'}`}>
         <div className="w-0 h-0 border-t-[7px] border-t-transparent border-l-[11px] border-l-white border-b-[7px] border-b-transparent ml-1" />
@@ -1074,7 +1082,7 @@ const UserTagList = ({ tags = [], className = '' }) => (
     {tags.map((tag) => (
       <span
         key={tag}
-        className={USER_BADGE_CLASS}
+        className={`${tag.includes('指导师') ? 'bg-[#E5CEAF]' : 'bg-[#FCEBEC]'} theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider`}
       >
         {tag}
       </span>

@@ -25,10 +25,10 @@ const RootDataSubmitSuccessPage = () => {
         {/* Content */}
         <div className="flex flex-1 flex-col items-center justify-center px-8 pb-16">
           {/* Success Icon */}
-          <div className="relative flex items-center justify-center">
-            {/* <div className="absolute h-[108px] w-[108px] rounded-full bg-[#C8161D]/10" /> */}
-            <div className="relative flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#C8161D] ">
-              <Check size={26} strokeWidth={3} className="text-white" />
+          <div className="relative flex h-[102px] w-[102px] items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-[#F3E8D8] opacity-45 blur-[2px]" />
+            <div className="relative flex h-[62px] w-[62px] items-center justify-center rounded-full bg-[#E7CFAE] shadow-[0_8px_20px_rgba(231,207,174,0.18)]">
+              <Check size={24} strokeWidth={3.2} className="text-white" />
             </div>
           </div>
 

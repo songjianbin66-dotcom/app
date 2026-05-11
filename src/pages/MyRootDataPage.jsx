@@ -51,11 +51,13 @@ const generateRandomChars = (seed) => {
   return result.join('');
 };
 
+const shouldShowVideoAgent = (category) => category === '讲解';
+
 const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   <button
     type="button"
     className="snap-item w-[200px] h-[260px] snap-center relative rounded-[10px] overflow-hidden bg-[#1A1D21] flex-shrink-0 transition-all duration-300 shadow-md text-left cursor-pointer"
-    aria-label={`播放${video.category}视频，来自${video.agent}`}
+    aria-label={shouldShowVideoAgent(video.category) ? `播放${video.category}视频，来自${video.agent}` : `播放${video.category}视频`}
     onClick={onOpenPlayer}
   >
     <img
@@ -66,9 +68,11 @@ const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
     />
     <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-black/55" />
     <div className={TOP_LEFT_CATEGORY_BADGE_CLASS}>{video.category}</div>
-    <div className="absolute right-0 top-0 z-10 rounded-bl-lg theme-bg px-3 py-1 text-[10px] font-bold text-white shadow-lg">
-      {video.agent}
-    </div>
+    {shouldShowVideoAgent(video.category) ? (
+      <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#E5CEAF] px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+        {video.agent}
+      </div>
+    ) : null}
     <div className="absolute inset-0 flex items-center justify-center">
       <div className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-500 ${isActive ? 'bg-white/40 scale-110' : 'bg-white/20'}`}>
         <div className="w-0 h-0 border-t-[7px] border-t-transparent border-l-[11px] border-l-white border-b-[7px] border-b-transparent ml-1" />
@@ -159,6 +163,13 @@ const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = null }) 
 
   return (
     <article className="bg-white py-4">
+      {data.updatedAt && (
+        <div className="flex justify-end px-4 pb-[15px]">
+          <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+            更新时间：{data.updatedAt}
+          </span>
+        </div>
+      )}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -184,15 +195,10 @@ const DataCard = ({ data, onOpenPlayer, hideAuthor = false, manageBar = null }) 
       </div>
       <div className="px-4 pt-3">
         <h3 className="text-[15px] font-bold leading-[1.4] line-clamp-2 mb-2 text-[#1F2329]">{currentVideo.title}</h3>
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2">
           <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
             {data.tags.join(' · ')}
           </span>
-          {data.updatedAt && (
-            <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
-              更新时间：{data.updatedAt}
-            </span>
-          )}
         </div>
         {!hideAuthor && (
           <div className="flex items-center gap-2 mb-3">
@@ -263,15 +269,17 @@ const DraftReviewCard = ({ data, manageBar }) => {
   const randomChars = useMemo(() => generateRandomChars(data.id), [data.id]);
   return (
     <article className="bg-white py-4 px-4">
+      {data.updatedAt && (
+        <div className="flex justify-end pb-[5px]">
+          <span className="text-[11px] font-medium tracking-[0.01em] text-gray-400">
+            更新时间：{data.updatedAt}
+          </span>
+        </div>
+      )}
       <div className="mb-3">
         <p className="text-[15px] leading-[1.85] text-[#1F2329] tracking-[0.02em] break-all">
           {randomChars}
         </p>
-        {data.updatedAt && (
-          <p className="mt-1.5 text-right text-[11px] font-medium text-gray-400 tracking-[0.01em]">
-            更新时间：{data.updatedAt}
-          </p>
-        )}
       </div>
       <div className="border-t border-[#F0F1F5] pt-3">
         {manageBar}
@@ -364,7 +372,7 @@ const ManageBar = ({ status, onView, onEdit, onDelete, onCreate }) => (
     {onCreate && status === '审核通过' && (
       <div
         onClick={onCreate}
-        className="flex items-center justify-center gap-1.5 w-full rounded-[8px] bg-[#C8161D] py-2 text-[12px] font-semibold text-white active:opacity-80 transition-opacity cursor-pointer"
+        className="flex items-center justify-center gap-1.5 w-full rounded-[8px] bg-[#E5CEAF] py-2 text-[12px] font-semibold text-white active:opacity-80 transition-opacity cursor-pointer"
       >
         <PenLine size={13} strokeWidth={2} />
         创作
