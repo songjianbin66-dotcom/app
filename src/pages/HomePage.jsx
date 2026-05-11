@@ -1064,7 +1064,7 @@ export const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
       {video.category}
     </div>
     {shouldShowVideoAgent(video.category) ? (
-      <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#E5CEAF] px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+      <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#E5CEAF] px-3 py-1 text-[10px] font-bold text-[#7A4B2F] shadow-lg">
         {video.agent}
       </div>
     ) : null}
@@ -1077,12 +1077,13 @@ export const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
   </button>
 );
 
-const UserTagList = ({ tags = [], className = '' }) => (
+const UserTagList = ({ tags = [], className = '', mentorTextColor = '#C8161D' }) => (
   <div className={`flex flex-wrap gap-1.5 ${className}`.trim()}>
     {tags.map((tag) => (
       <span
         key={tag}
-        className={`${tag.includes('指导师') ? 'bg-[#E5CEAF]' : 'bg-[#FCEBEC]'} theme-text text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider`}
+        className={`${tag.includes('指导师') ? 'bg-[#E5CEAF]' : 'bg-[#FCEBEC]'} text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider `}
+        style={{ color: tag.includes('指导师') ? mentorTextColor : THEME_COLOR }}
       >
         {tag}
       </span>
@@ -1102,7 +1103,7 @@ const LeaderItem = ({ leader }) => (
           {leader.isFollowing ? '已关注' : '+ 关注'}
         </div>
       </div>
-      <UserTagList tags={leader.tags} className="mb-1.5" />
+      <UserTagList tags={leader.tags} className="mb-1.5" mentorTextColor="#7A4B2F" />
       <div className="flex items-center gap-3">
         <StatMini label="根数据" val={leader.rootDataCount} />
         <div className="w-[1px] h-2.5 bg-[#E5E6EB]" />
@@ -1126,7 +1127,7 @@ const InstructorItem = ({ instructor }) => (
             <span className="text-[15px] font-bold text-[#1F2329]">{instructor.name}</span>
             <span className={USER_BADGE_CLASS}>审核通过率 {instructor.passRate}</span>
           </div>
-          <UserTagList tags={instructor.tags} className="mt-1.5" />
+          <UserTagList tags={instructor.tags} className="mt-1.5" mentorTextColor="#7A4B2F" />
         </div>
       </div>
       <div className={`inline-flex h-6 items-center justify-center rounded-full border px-2 text-[12px] font-medium leading-none ${instructor.isFollowing ? 'bg-[#F5F6F8] text-[#8F959E] border-transparent' : 'bg-white theme-text theme-border'}`}>

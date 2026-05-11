@@ -69,7 +69,7 @@ const VideoSlide = ({ video, isActive, onOpenPlayer }) => (
     <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-black/55" />
     <div className={TOP_LEFT_CATEGORY_BADGE_CLASS}>{video.category}</div>
     {shouldShowVideoAgent(video.category) ? (
-      <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#E5CEAF] px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+      <div className="absolute right-0 top-0 z-10 rounded-bl-lg bg-[#E5CEAF] px-3 py-1 text-[10px] font-bold text-[#7A4B2F] shadow-lg">
         {video.agent}
       </div>
     ) : null}
@@ -372,7 +372,7 @@ const ManageBar = ({ status, onView, onEdit, onDelete, onCreate }) => (
     {onCreate && status === '审核通过' && (
       <div
         onClick={onCreate}
-        className="flex items-center justify-center gap-1.5 w-full rounded-[8px] bg-[#E5CEAF] py-2 text-[12px] font-semibold text-white active:opacity-80 transition-opacity cursor-pointer"
+        className="flex items-center justify-center gap-1.5 w-full rounded-[8px] bg-[#E5CEAF] py-2 text-[12px] font-semibold text-[#7A4B2F] active:opacity-80 transition-opacity cursor-pointer"
       >
         <PenLine size={13} strokeWidth={2} />
         创作
