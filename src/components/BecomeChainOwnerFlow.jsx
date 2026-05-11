@@ -205,7 +205,7 @@ export function BecomeChainOwnerFlow({ onClose, onSuccess, onRootDataDev, onOpen
               type="button"
               onClick={() => {
                 if (!agreedToTerms) {
-                  alert('您需要先查看并同意链主协议');
+                  // alert('您需要先查看并同意链主协议');
                   setShakeTerms(true);
                   setTimeout(() => setShakeTerms(false), 500);
                   return;

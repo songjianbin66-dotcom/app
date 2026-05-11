@@ -443,7 +443,7 @@ const App = () => {
               onOpenAccount={() => {
                 setShowChainOwnerFlow(false);
                 setIsPromoVisible(false);
-                navigate('/wallet');
+                navigate('/account-opening');
               }}
             />
           )}
