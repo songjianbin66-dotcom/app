@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'motion/react';
+import { BecomeChainOwnerFlow } from '../components/BecomeChainOwnerFlow.jsx';
 import ProfilePage from './ProfilePage';
 import { 
   Menu, 
@@ -135,6 +137,7 @@ const App = () => {
   const [bottomTab, setBottomTab] = useState('首页');
   const [isSearchOpen, setIsSearchOpen] = useState(() => Boolean(location.state?.openSearch));
   const [isPromoVisible, setIsPromoVisible] = useState(true);
+  const [showChainOwnerFlow, setShowChainOwnerFlow] = useState(false);
   const [notificationCount, setNotificationCount] = useState(3);
   const [visibleRootDataCount, setVisibleRootDataCount] = useState(INITIAL_ROOT_DATA_COUNT);
   const [floatingButtonPos, setFloatingButtonPos] = useState({ x: 0, y: 0 });
@@ -424,7 +427,28 @@ const App = () => {
       <style>{SHARED_THEME_STYLES}</style>
 
       <div ref={phoneFrameRef} className="w-full max-w-[430px] h-screen bg-white flex flex-col shadow-2xl relative overflow-hidden text-[#1F2329]">
-        
+        <AnimatePresence>
+          {showChainOwnerFlow && (
+            <BecomeChainOwnerFlow
+              onClose={() => setShowChainOwnerFlow(false)}
+              onSuccess={() => {
+                setShowChainOwnerFlow(false);
+                setIsPromoVisible(false);
+              }}
+              onRootDataDev={() => {
+                setShowChainOwnerFlow(false);
+                setIsPromoVisible(false);
+                navigate('/root-data-draft');
+              }}
+              onOpenAccount={() => {
+                setShowChainOwnerFlow(false);
+                setIsPromoVisible(false);
+                navigate('/wallet');
+              }}
+            />
+          )}
+        </AnimatePresence>
+
         {/* 顶部导航 */}
         <header className="flex items-center justify-between px-4 h-[50px] border-b-[0.5px] border-[#E5E6EB] bg-white sticky top-0 z-50 shrink-0">
           <Menu size={18} className="text-[#646A73]" />
@@ -502,6 +526,15 @@ const App = () => {
                     </div>
                   </div>
                   <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setShowChainOwnerFlow(true)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setShowChainOwnerFlow(true);
+                      }
+                    }}
                     className="absolute bottom-2.5 right-4 inline-flex h-8 items-center justify-center rounded-[16px] bg-white px-4 text-[11px] font-bold theme-text shadow-[0_8px_18px_rgba(255,255,255,0.16)]"
                   >
                     立即成为链主
